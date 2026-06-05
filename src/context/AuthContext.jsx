@@ -3,88 +3,84 @@ import { supabase } from '../api/supabase';
 
 export const AuthContext = createContext(null);
 
-const MOCK_PROFILES = {
-  'admin@test.com': { email: 'admin@test.com', role: 'ADMIN', name: 'Administrador Global' },
-  'companyadmin@test.com': { email: 'companyadmin@test.com', role: 'COMPANY_ADMIN', name: 'Administrador de Empresa' },
-  'evaluator@test.com': { email: 'evaluator@test.com', role: 'EVALUATOR', name: 'Evaluador Externo' }
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // On mount, restore session from localStorage
   useEffect(() => {
     const savedUser = localStorage.getItem('survey_dashboard_user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setLoading(false);
-      return;
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const userEmail = session.user.email;
-        const mockProfile = MOCK_PROFILES[userEmail];
-        
-        setUser({
-          id: session.user.id,
-          email: userEmail,
-          role: mockProfile?.role || 'EVALUATOR', // default
-          name: mockProfile?.name || session.user.user_metadata?.full_name || 'Usuario Registrado',
-          isMock: false
-        });
-      } else {
-        setUser(null);
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem('survey_dashboard_user');
       }
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    }
+    setLoading(false);
   }, []);
 
+  /**
+   * Login: queries the custom User table directly.
+   * The password in the DB is stored in plain text (as per the current schema).
+   */
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        if (MOCK_PROFILES[email.toLowerCase()]) {
-          const mockUser = {
-            id: 'mock-id-' + email.toLowerCase(),
-            ...MOCK_PROFILES[email.toLowerCase()],
-            isMock: true
-          };
-          setUser(mockUser);
-          localStorage.setItem('survey_dashboard_user', JSON.stringify(mockUser));
-          setLoading(false);
-          return { success: true };
-        }
-        throw error;
+      // Query the real User table by email
+      const { data: users, error } = await supabase
+        .from('User')
+        .select('id, nombre, apellido, email, rol, empresa_id, estado, password')
+        .eq('email', email.trim().toLowerCase())
+        .limit(1);
+
+      if (error) throw error;
+
+      if (!users || users.length === 0) {
+        setLoading(false);
+        return { success: false, error: 'Correo electrónico no registrado en el sistema.' };
       }
-      
+
+      const dbUser = users[0];
+
+      // Check password (plain text comparison as per schema)
+      if (dbUser.password !== password) {
+        setLoading(false);
+        return { success: false, error: 'Contraseña incorrecta.' };
+      }
+
+      if (dbUser.estado && dbUser.estado !== 'ACTIVO') {
+        setLoading(false);
+        return { success: false, error: 'Usuario inactivo. Contacte al administrador.' };
+      }
+
+      // Build the session user object — includes real DB id and empresa_id
+      const sessionUser = {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: `${dbUser.nombre} ${dbUser.apellido}`,
+        nombre: dbUser.nombre,
+        apellido: dbUser.apellido,
+        role: dbUser.rol,   // ADMIN | COMPANY_ADMIN | EVALUATOR
+        empresa_id: dbUser.empresa_id || null,
+        isMock: false,
+      };
+
+      setUser(sessionUser);
+      localStorage.setItem('survey_dashboard_user', JSON.stringify(sessionUser));
       setLoading(false);
       return { success: true };
+
     } catch (err) {
+      console.error('Login error:', err.message);
       setLoading(false);
-      return { success: false, error: err.message };
+      return { success: false, error: `Error al iniciar sesión: ${err.message}` };
     }
   };
 
   const logout = async () => {
-    setLoading(true);
-    try {
-      if (user && !user.isMock) {
-        await supabase.auth.signOut();
-      }
-    } catch (err) {
-      console.error('Error logging out from Supabase:', err);
-    } finally {
-      setUser(null);
-      localStorage.removeItem('survey_dashboard_user');
-      setLoading(false);
-    }
+    setUser(null);
+    localStorage.removeItem('survey_dashboard_user');
   };
 
   return (

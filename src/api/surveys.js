@@ -105,9 +105,11 @@ export async function getSurveyDetail(surveyId) {
  */
 export async function createSurvey({ titulo, descripcion, created_by, status = 'DRAFT', version = 1 }) {
   try {
+    const id = crypto.randomUUID();
     const { data, error } = await supabase
       .from('Survey')
       .insert([{
+        id,
         titulo,
         descripcion: descripcion || null,
         created_by,
@@ -146,6 +148,7 @@ export async function createQuestions(surveyId, questions, defaultCategoryId) {
   try {
     // 1. Insertar preguntas
     const questionsPayload = questions.map((q, i) => ({
+      id:                  crypto.randomUUID(),
       survey_id:           surveyId,
       pregunta:            q.pregunta.trim(),
       tipo:                q.tipo,
@@ -169,6 +172,7 @@ export async function createQuestions(surveyId, questions, defaultCategoryId) {
       if (srcQ.opciones && srcQ.opciones.length > 0) {
         srcQ.opciones.forEach(opt => {
           allOptions.push({
+            id:          crypto.randomUUID(),
             question_id: dbQ.id,
             texto:       opt.texto,
             valor:       Number(opt.valor),

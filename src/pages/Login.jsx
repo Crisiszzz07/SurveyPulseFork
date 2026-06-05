@@ -26,9 +26,9 @@ export const Login = () => {
     }
   };
 
-  const handleQuickFill = (mockEmail) => {
+  const handleQuickFill = (mockEmail, mockPassword) => {
     setEmail(mockEmail);
-    setPassword('password123');
+    setPassword(mockPassword);
   };
 
   return (
@@ -73,21 +73,21 @@ export const Login = () => {
         </form>
 
         <div className="demo-credentials">
-          <p className="demo-title">Accesos Rápidos de Prueba (Mock):</p>
+          <p className="demo-title">Accesos Rápidos:</p>
           <div className="demo-buttons">
             <button 
               type="button" 
               className="demo-btn admin"
-              onClick={() => handleQuickFill('admin@test.com')}
+              onClick={() => handleQuickFill('admin@supplychain.com', 'Admin1234!')}
             >
-              Rol ADMIN (Ver todo)
+              Administrador Global
             </button>
             <button 
               type="button" 
               className="demo-btn evaluator"
-              onClick={() => handleQuickFill('evaluator@test.com')}
+              onClick={() => handleQuickFill('carlos.gomez@logixsolutions.com', 'Carlos1234!')}
             >
-              Rol EVALUATOR
+              Admin Empresa
             </button>
           </div>
         </div>

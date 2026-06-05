@@ -35,7 +35,9 @@ export const TakeSurvey = () => {
           attResult.answers.forEach(ans => {
             initialAnswers[ans.question_id] = {
               question_id: ans.question_id,
-              score: ans.score || 3, // fallback default score
+              score: ans.score || ans.numeric_value || 3, // fallback default score
+              numeric_value: ans.numeric_value || ans.score || 3,
+              selected_option_id: ans.selected_option_id || null,
               answer_text: ans.answer_text || ''
             };
           });
@@ -60,13 +62,19 @@ export const TakeSurvey = () => {
       5: 'Siempre se hace sin falta'
     };
 
+    // Find the specific question to get the option ID
+    const question = survey?.questions?.find(q => q.id === questionId);
+    const matchedOption = question?.options?.find(opt => Number(opt.valor) === Number(value));
+
     setAnswersMap(prev => ({
       ...prev,
       [questionId]: {
         ...prev[questionId],
         question_id: questionId,
         score: value,
-        answer_text: LIKERT_TEXTS[value]
+        numeric_value: value,
+        selected_option_id: matchedOption?.id || null,
+        answer_text: matchedOption?.texto || LIKERT_TEXTS[value]
       }
     }));
   };
@@ -78,6 +86,8 @@ export const TakeSurvey = () => {
         ...prev[questionId],
         question_id: questionId,
         score: 3, // default score for text answers
+        numeric_value: 3,
+        selected_option_id: null,
         answer_text: text
       }
     }));
@@ -99,7 +109,7 @@ export const TakeSurvey = () => {
     if (result.success) {
       showToastMsg('Borrador guardado correctamente.');
     } else {
-      showToastMsg('Error al guardar el borrador.', 'error');
+      showToastMsg(`Error al guardar: ${result.error || 'error desconocido'}`, 'error');
     }
   };
 
@@ -117,7 +127,13 @@ export const TakeSurvey = () => {
     const answersArray = Object.values(answersMap);
     
     // 1. Save answers first
-    await savePartialAnswers(attemptId, answersArray);
+    const saveResult = await savePartialAnswers(attemptId, answersArray);
+    if (!saveResult.success) {
+      setSaving(false);
+      setShowConfirmModal(false);
+      showToastMsg(`Error al guardar respuestas: ${saveResult.error || 'error desconocido'}`, 'error');
+      return;
+    }
     
     // 2. Submit the attempt to trigger calculation
     const submitResult = await submitAttempt(attemptId);
@@ -127,7 +143,7 @@ export const TakeSurvey = () => {
     if (submitResult.success) {
       navigate(`/surveys/${attempt.survey_id}?attempt=${attemptId}`);
     } else {
-      showToastMsg('Error al enviar la evaluación.', 'error');
+      showToastMsg(`Error al enviar: ${submitResult.error || 'error desconocido'}`, 'error');
     }
   };
 

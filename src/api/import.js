@@ -54,6 +54,7 @@ export async function getOrCreateCategories(categoryNames) {
     if (missingNames.length > 0) {
       // Insertar las categorías faltantes en lote
       const insertPayload = missingNames.map(name => ({
+        id: crypto.randomUUID(),
         name,
         description: `Categoría importada automáticamente`
       }));

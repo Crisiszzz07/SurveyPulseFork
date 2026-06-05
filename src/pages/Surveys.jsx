@@ -230,16 +230,28 @@ export const Surveys = () => {
   /* ── Attempt start ── */
   const handleStartAttempt = async (surveyId) => {
     try {
+      if (!user?.id) {
+        showToast('Debes iniciar sesión con una cuenta registrada para responder encuestas.', 'error');
+        return;
+      }
+
+      // The company_id: use the user's company if available, otherwise use first available company
+      const companyId = user.empresa_id || '5d9dc581-64c4-40ad-a56c-740927393f35';
+
       const result = await createAttempt({
         survey_id:    surveyId,
-        company_id:   'c1111111-1111-1111-1111-111111111111',
-        evaluator_id: 'u3333333-3333-3333-3333-333333333333',
+        company_id:   companyId,
+        evaluator_id: user.id,
       });
+
       if (result.success && result.attempt) {
         navigate(`/attempts/${result.attempt.id}/take`);
+      } else {
+        showToast(`Error al iniciar la encuesta: ${result.error || 'error desconocido'}`, 'error');
       }
     } catch (err) {
       console.error('Error al iniciar intento:', err);
+      showToast('Error inesperado al iniciar la encuesta.', 'error');
     }
   };
 

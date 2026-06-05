@@ -23,32 +23,32 @@ const MOCK_ANSWERS = {
  * Inicia un nuevo intento de encuesta (In Progress).
  */
 export async function createAttempt({ survey_id, company_id, evaluator_id }) {
-  try {
-    const { data, error } = await supabase
-      .from('SurveyAttempt')
-      .insert([{ survey_id, company_id, evaluator_id, status: 'IN_PROGRESS', started_at: new Date().toISOString() }])
-      .select()
-      .single();
-    if (error) throw error;
-    return { success: true, attempt: data };
-  } catch (err) {
-    console.warn('Usando inicio de intento simulado:', err.message);
-    const newAttempt = {
-      id: 'mock-att-' + Math.random().toString(36).substr(2, 9),
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('SurveyAttempt')
+    .insert([{
+      id,
       survey_id,
       company_id,
       evaluator_id,
       status: 'IN_PROGRESS',
-      started_at: new Date().toISOString(),
-      completed_at: null,
-      total_score: null,
-      percentage: null,
-      maturity_level: null
-    };
-    MOCK_ATTEMPTS.push(newAttempt);
-    return { success: true, attempt: newAttempt };
+      started_at: now,
+      created_at: now,
+      updated_at: now,
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('❌ Error creando SurveyAttempt:', error.message);
+    return { success: false, error: error.message };
   }
+
+  return { success: true, attempt: data };
 }
+
 
 /**
  * Obtener detalle del intento y respuestas guardadas.
@@ -64,7 +64,7 @@ export async function getAttemptDetails(id) {
 
     const { data: answers, error: ansError } = await supabase
       .from('SurveyAnswer')
-      .select('*, selected_option(*)')
+      .select('*, selected_option:QuestionOption(*)')
       .eq('attempt_id', id);
     if (ansError) throw ansError;
 
@@ -74,7 +74,12 @@ export async function getAttemptDetails(id) {
       survey: attempt.Survey || attempt.survey
     } : null;
 
-    return { success: true, attempt: normalizedAttempt, answers: answers || [] };
+    const normalizedAnswers = (answers || []).map(ans => ({
+      ...ans,
+      score: ans.numeric_value || ans.selected_option?.valor || 3
+    }));
+
+    return { success: true, attempt: normalizedAttempt, answers: normalizedAnswers };
   } catch (err) {
     console.warn(`Usando detalle del intento simulado para ID: ${id}`);
     const attempt = MOCK_ATTEMPTS.find(a => a.id === id) || MOCK_ATTEMPTS[0];
@@ -85,50 +90,49 @@ export async function getAttemptDetails(id) {
 
 /**
  * Guarda respuestas parciales del evaluador.
+ * Estrategia: DELETE las respuestas existentes de este intento, luego INSERT las nuevas.
+ * Esto evita depender de una restricción UNIQUE que puede no existir en la BD.
  */
 export async function savePartialAnswers(attemptId, answersArray) {
-  try {
-    // En Supabase, usamos upsert para guardar o sobreescribir las respuestas
-    // answersArray contiene [{ question_id, selected_option_id, answer_text, numeric_value }]
-    const payload = answersArray.map(ans => ({
-      attempt_id: attemptId,
-      question_id: ans.question_id,
-      selected_option_id: ans.selected_option_id || null,
-      answer_text: ans.answer_text || null,
-      numeric_value: ans.numeric_value || null
-    }));
-
-    const { data, error } = await supabase
-      .from('SurveyAnswer')
-      .upsert(payload, { onConflict: 'attempt_id,question_id' });
-    if (error) throw error;
-    
-    return { success: true };
-  } catch (err) {
-    console.warn('Usando guardado de respuestas simulado:', err.message);
-    if (!MOCK_ANSWERS[attemptId]) {
-      MOCK_ANSWERS[attemptId] = [];
-    }
-    
-    answersArray.forEach(ans => {
-      const idx = MOCK_ANSWERS[attemptId].findIndex(a => a.question_id === ans.question_id);
-      const formattedAns = {
-        id: 'mock-ans-' + Math.random().toString(36).substr(2, 9),
-        attempt_id: attemptId,
-        question_id: ans.question_id,
-        score: ans.score || 3, // mock score fallback
-        answer_text: ans.answer_text
-      };
-      
-      if (idx !== -1) {
-        MOCK_ANSWERS[attemptId][idx] = { ...MOCK_ANSWERS[attemptId][idx], ...formattedAns };
-      } else {
-        MOCK_ANSWERS[attemptId].push(formattedAns);
-      }
-    });
-
+  if (!answersArray || answersArray.length === 0) {
     return { success: true };
   }
+
+  // 1. Borrar respuestas anteriores de este intento
+  const { error: delError } = await supabase
+    .from('SurveyAnswer')
+    .delete()
+    .eq('attempt_id', attemptId);
+
+  if (delError) {
+    console.error('❌ Error borrando respuestas anteriores:', delError.message);
+    return { success: false, error: delError.message };
+  }
+
+  // 2. Insertar las respuestas actuales con IDs nuevos
+  const now = new Date().toISOString();
+  const payload = answersArray.map(ans => ({
+    id: crypto.randomUUID(),
+    attempt_id: attemptId,
+    question_id: ans.question_id,
+    selected_option_id: ans.selected_option_id || null,
+    answer_text: ans.answer_text || null,
+    numeric_value: ans.numeric_value != null ? Number(ans.numeric_value)
+                  : ans.score != null       ? Number(ans.score)
+                  : null,
+    created_at: now,
+  }));
+
+  const { error: insError } = await supabase
+    .from('SurveyAnswer')
+    .insert(payload);
+
+  if (insError) {
+    console.error('❌ Error guardando respuestas:', insError.message);
+    return { success: false, error: insError.message };
+  }
+
+  return { success: true };
 }
 
 /**
@@ -139,20 +143,17 @@ export async function submitAttempt(id) {
     // 1. Obtener todas las respuestas del intento
     const { data: answers, error: ansError } = await supabase
       .from('SurveyAnswer')
-      .select('*, selected_option(*)')
+      .select('numeric_value, selected_option_id')
       .eq('attempt_id', id);
     if (ansError) throw ansError;
 
     if (!answers || answers.length === 0) {
-      throw new Error('No se pueden calificar intentos sin respuestas.');
+      return { success: false, error: 'No se encontraron respuestas guardadas para este intento.' };
     }
 
-    // 2. Calcular la puntuación total y porcentaje
-    // Simulamos un algoritmo simple sumando los valores de las opciones seleccionadas
-    // y normalizándolas en porcentaje (asumiendo escala Likert 1-5).
+    // 2. Calcular la puntuación total y porcentaje (escala Likert 1-5)
     const totalScoreSum = answers.reduce((acc, curr) => {
-      const val = curr.selected_option?.valor || curr.numeric_value || 3; // fallback val 3
-      return acc + val;
+      return acc + Number(curr.numeric_value || 3);
     }, 0);
     
     const maxPossibleScore = answers.length * 5;
@@ -177,26 +178,29 @@ export async function submitAttempt(id) {
 
     return { success: true, attempt };
   } catch (err) {
-    console.warn(`Usando calificación y envío simulado para intento ID: ${id}`, err.message);
-    const attempt = MOCK_ATTEMPTS.find(a => a.id === id);
-    if (attempt) {
-      const answers = MOCK_ANSWERS[attempt.id] || [];
-      const totalScoreSum = answers.reduce((acc, curr) => acc + (curr.score || 3), 0);
-      const maxPossibleScore = (answers.length || 5) * 5;
-      const percentage = Math.round((totalScoreSum / maxPossibleScore) * 100);
-      const level = getMaturityLevel(percentage);
-
-      attempt.status = 'COMPLETED';
-      attempt.completed_at = new Date().toISOString();
-      attempt.total_score = percentage;
-      attempt.percentage = percentage;
-      attempt.maturity_level = level;
-
-      return { success: true, attempt };
+    console.error(`❌ Error al finalizar intento ${id}:`, err.message);
+    // Solo hacemos fallback a mock si el intento es un ID de mock
+    if (id.startsWith('mock-')) {
+      const attempt = MOCK_ATTEMPTS.find(a => a.id === id);
+      if (attempt) {
+        const answers = MOCK_ANSWERS[attempt.id] || [];
+        const totalScoreSum = answers.reduce((acc, curr) => acc + (curr.score || 3), 0);
+        const maxPossibleScore = (answers.length || 5) * 5;
+        const percentage = Math.round((totalScoreSum / maxPossibleScore) * 100);
+        const level = getMaturityLevel(percentage);
+        attempt.status = 'COMPLETED';
+        attempt.completed_at = new Date().toISOString();
+        attempt.total_score = percentage;
+        attempt.percentage = percentage;
+        attempt.maturity_level = level;
+        return { success: true, attempt };
+      }
+      return { success: false, error: 'Intento simulado no encontrado' };
     }
-    return { success: false, error: 'Intento no encontrado' };
+    return { success: false, error: err.message };
   }
 }
+
 
 /**
  * Historial de encuestas completadas por la empresa.
@@ -255,10 +259,17 @@ export async function getSurveyAnswers(attemptId) {
   try {
     const { data, error } = await supabase
       .from('SurveyAnswer')
-      .select('*, selected_option(texto, valor)')
+      .select('*, selected_option:QuestionOption(texto, valor)')
       .eq('attempt_id', attemptId);
     if (error) throw error;
-    return data && data.length > 0 ? data : (MOCK_ANSWERS[attemptId] || MOCK_ANSWERS['att-1']);
+    
+    // Normalize data to include score for compatibility
+    const normalizedData = (data || []).map(ans => ({
+      ...ans,
+      score: ans.numeric_value || ans.selected_option?.valor || 3
+    }));
+    
+    return normalizedData && normalizedData.length > 0 ? normalizedData : (MOCK_ANSWERS[attemptId] || MOCK_ANSWERS['att-1']);
   } catch (err) {
     console.warn(`Usando datos de prueba para Survey Answers (${attemptId}):`, err.message);
     return MOCK_ANSWERS[attemptId] || MOCK_ANSWERS['att-1'];
