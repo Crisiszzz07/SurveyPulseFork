@@ -73,7 +73,7 @@ export const Dashboard = () => {
             </span>
             <span className="kpi-title">Formularios Completados</span>
           </div>
-          <div className="kpi-value">{stats?.totalCompleted}</div>
+          <div className="kpi-value">{stats?.totalAttempts || 0}</div>
           <div className="kpi-desc">Intentos totales registrados</div>
         </div>
 
@@ -84,7 +84,7 @@ export const Dashboard = () => {
             </span>
             <span className="kpi-title">Puntaje Promedio General</span>
           </div>
-          <div className="kpi-value">{stats?.avgScore}%</div>
+          <div className="kpi-value">{stats?.avgScoreGlobal || 0}%</div>
           <div className="kpi-desc">Nivel de madurez global</div>
         </div>
 
@@ -95,7 +95,7 @@ export const Dashboard = () => {
             </span>
             <span className="kpi-title">Empresas Participantes</span>
           </div>
-          <div className="kpi-value">{stats?.companiesCount}</div>
+          <div className="kpi-value">{stats?.ranking?.length || 0}</div>
           <div className="kpi-desc">Organizaciones evaluadas</div>
         </div>
       </div>

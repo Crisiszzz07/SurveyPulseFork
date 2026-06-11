@@ -33,14 +33,14 @@ export default function ImportSurvey() {
   const { user } = useAuth();
   const fileInputRef = useRef(null);
 
-  // Guard – only ADMIN
-  if (user && user.role !== 'ADMIN') {
+  // Guard – only ADMIN and COMPANY_ADMIN
+  if (user && user.role !== 'ADMIN' && user.role !== 'COMPANY_ADMIN') {
     return (
       <div className="page-container" style={{ maxWidth: 600, textAlign: 'center', paddingTop: '4rem', margin: '0 auto' }}>
         <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '3rem', boxShadow: 'var(--shadow-premium)' }}>
           <AlertTriangle size={48} style={{ color: '#f59e0b', marginBottom: '1.5rem' }} />
           <h2 style={{ color: 'var(--text-primary)', marginBottom: '0.75rem' }}>Acceso restringido</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Solo los administradores globales pueden importar encuestas desde archivos Excel.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Solo los administradores pueden importar encuestas desde archivos Excel.</p>
           <Link to="/" className="btn-primary" style={{ marginTop: '1.5rem', display: 'inline-flex', textDecoration: 'none' }}>
             Volver a Encuestas
           </Link>

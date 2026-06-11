@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { getUsers, updateUser, deleteUser } from '../api/users';
+import { getUsers, updateUser, deleteUser, createUser } from '../api/users';
 import { getCompanies } from '../api/companies';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -203,6 +203,209 @@ function EditModal({ user: u, companies, onSave, onClose }) {
   );
 }
 
+/* ─── Create User Modal ────────────────────────────────────────── */
+function CreateUserModal({ companies, onSave, onClose, authUser }) {
+  const isAdmin        = authUser?.role === 'ADMIN';
+  const isCompanyAdmin = authUser?.role === 'COMPANY_ADMIN';
+  
+  const [form, setForm] = useState({
+    nombre:     '',
+    apellido:   '',
+    email:      '',
+    password:   '',
+    rol:        'EVALUATOR',
+    estado:     'ACTIVO',
+    empresa_id: isCompanyAdmin ? (authUser.empresa_id || '') : '',
+  });
+  
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState('');
+
+  const set = (k, v) => {
+    setForm(f => ({ ...f, [k]: v }));
+    setErrors(e => ({ ...e, [k]: '' }));
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!form.nombre.trim()) errs.nombre = 'El nombre es obligatorio.';
+    if (!form.apellido.trim()) errs.apellido = 'El apellido es obligatorio.';
+    if (!form.email.trim()) {
+      errs.email = 'El correo electrónico es obligatorio.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errs.email = 'Correo electrónico inválido.';
+    }
+    if (!form.password) {
+      errs.password = 'La contraseña es obligatoria.';
+    } else if (form.password.length < 6) {
+      errs.password = 'Debe tener al menos 6 caracteres.';
+    }
+    return errs;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setSaving(true);
+    setError('');
+    const res = await onSave(form);
+    if (!res.success) {
+      setError(res.error || 'Error al guardar');
+    }
+    setSaving(false);
+  };
+
+  const availableRoles = isAdmin 
+    ? ['ADMIN', 'COMPANY_ADMIN', 'EVALUATOR']
+    : ['COMPANY_ADMIN', 'EVALUATOR'];
+
+  const myCompanyName = isCompanyAdmin 
+    ? (companies.find(c => c.id === authUser.empresa_id)?.nombre_empresa || 'Mi Empresa') 
+    : '';
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--bg-card)', border: '1px solid var(--border)',
+        borderRadius: '1rem', width: '100%', maxWidth: '480px',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.5)', overflow: 'hidden'
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '1.25rem 1.5rem',
+          borderBottom: '1px solid var(--border)',
+          background: 'linear-gradient(135deg, rgba(168,85,247,0.08), rgba(59,130,246,0.06))'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Avatar nombre={form.nombre || '?'} apellido={form.apellido} />
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Nuevo Usuario
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>Crear perfil en el sistema</p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-muted)', padding: '4px', borderRadius: '6px'
+          }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label">Nombre *</label>
+              <input 
+                className="form-input" 
+                value={form.nombre}
+                onChange={e => set('nombre', e.target.value)} 
+                style={{ borderColor: errors.nombre ? '#ef4444' : undefined, marginBottom: 0 }}
+              />
+              {errors.nombre && <span style={{ fontSize: '0.74rem', color: '#ef4444' }}>{errors.nombre}</span>}
+            </div>
+            <div className="form-group">
+              <label className="form-label">Apellido *</label>
+              <input 
+                className="form-input" 
+                value={form.apellido}
+                onChange={e => set('apellido', e.target.value)} 
+                style={{ borderColor: errors.apellido ? '#ef4444' : undefined, marginBottom: 0 }}
+              />
+              {errors.apellido && <span style={{ fontSize: '0.74rem', color: '#ef4444' }}>{errors.apellido}</span>}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Correo Electrónico *</label>
+            <input 
+              type="email"
+              className="form-input" 
+              value={form.email}
+              onChange={e => set('email', e.target.value)} 
+              placeholder="correo@ejemplo.com"
+              style={{ borderColor: errors.email ? '#ef4444' : undefined, marginBottom: 0 }}
+            />
+            {errors.email && <span style={{ fontSize: '0.74rem', color: '#ef4444' }}>{errors.email}</span>}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Contraseña *</label>
+            <input 
+              type="password"
+              className="form-input" 
+              value={form.password}
+              onChange={e => set('password', e.target.value)} 
+              placeholder="Mínimo 6 caracteres"
+              style={{ borderColor: errors.password ? '#ef4444' : undefined, marginBottom: 0 }}
+            />
+            {errors.password && <span style={{ fontSize: '0.74rem', color: '#ef4444' }}>{errors.password}</span>}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Rol</label>
+            <select className="form-select" value={form.rol} onChange={e => set('rol', e.target.value)}>
+              {availableRoles.map(r => <option key={r} value={r}>{roleMeta[r]?.label || r}</option>)}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Empresa</label>
+            {isCompanyAdmin ? (
+              <select className="form-select" value={form.empresa_id} disabled>
+                <option value={form.empresa_id}>{myCompanyName}</option>
+              </select>
+            ) : (
+              <select className="form-select" value={form.empresa_id} onChange={e => set('empresa_id', e.target.value)}>
+                <option value="">— Sin empresa —</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.nombre_empresa}</option>)}
+              </select>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Estado</label>
+            <select className="form-select" value={form.estado} onChange={e => set('estado', e.target.value)}>
+              {ESTADOS.map(s => <option key={s} value={s}>{estadoMeta[s]?.label || s}</option>)}
+            </select>
+          </div>
+
+          {error && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: '8px', padding: '0.6rem 1rem',
+              color: '#ef4444', fontSize: '0.82rem'
+            }}>
+              <AlertTriangle size={14} /> {error}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={14} />}
+              {saving ? 'Registrando…' : 'Crear Usuario'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Confirm Delete Modal ────────────────────────────────────── */
 function ConfirmDeleteModal({ user: u, onConfirm, onClose }) {
   const [deleting, setDeleting] = useState(false);
@@ -285,6 +488,7 @@ export default function UsersList() {
 
   const [editingUser,   setEditingUser]   = useState(null);
   const [deletingUser,  setDeletingUser]  = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [toast,         setToast]         = useState(null);
 
   /* Toast helper */
@@ -343,6 +547,16 @@ export default function UsersList() {
     }
   };
 
+  const handleCreate = async (data) => {
+    const res = await createUser(data);
+    if (res.success) {
+      showToast('Usuario creado correctamente.');
+      setShowCreateModal(false);
+      fetchUsers();
+    }
+    return res;
+  };
+
   const companyName = (empresa_id) =>
     companies.find(c => c.id === empresa_id)?.nombre_empresa || '—';
 
@@ -365,6 +579,14 @@ export default function UsersList() {
       )}
 
       {/* Modals */}
+      {showCreateModal && (
+        <CreateUserModal
+          companies={companies}
+          onSave={handleCreate}
+          onClose={() => setShowCreateModal(false)}
+          authUser={authUser}
+        />
+      )}
       {editingUser && (
         <EditModal
           user={editingUser}
@@ -394,10 +616,21 @@ export default function UsersList() {
               : `${total} usuarios en el sistema`}
           </p>
         </div>
-        <button className="btn-primary" onClick={fetchUsers} style={{ gap: '6px' }}>
-          <RefreshCw size={15} />
-          Actualizar
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button className="btn-secondary" onClick={fetchUsers} style={{ gap: '6px' }}>
+            <RefreshCw size={15} />
+            Actualizar
+          </button>
+          <button 
+            id="btn-new-user"
+            className="btn-primary" 
+            onClick={() => setShowCreateModal(true)} 
+            style={{ gap: '6px' }}
+          >
+            <User size={15} />
+            Nuevo Usuario
+          </button>
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -505,17 +738,12 @@ export default function UsersList() {
             <p style={{ fontSize: '0.85rem' }}>Intenta ajustar los filtros de búsqueda.</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+          <div className="data-table-container">
+            <table className="data-table">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <tr>
                   {['Usuario', 'Email', 'Rol', 'Empresa', 'Estado', 'Acciones'].map(h => (
-                    <th key={h} style={{
-                      padding: '0.85rem 1rem', textAlign: 'left',
-                      fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em',
-                      color: 'var(--text-muted)', textTransform: 'uppercase',
-                      background: 'rgba(255,255,255,0.02)'
-                    }}>{h}</th>
+                    <th key={h}>{h}</th>
                   ))}
                 </tr>
               </thead>

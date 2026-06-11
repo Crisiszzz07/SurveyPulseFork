@@ -19,7 +19,7 @@ export const ScoreBarChart = ({ data }) => {
   const formattedData = data.map(item => ({
     ...item,
     fecha: item.completed_at ? new Date(item.completed_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) : '',
-    puntuacion: item.total_score || item.averageScore || 0,
+    puntuacion: item.total_score || item.averageScore || item.averagePercentage || 0,
     nombre: item.company || item.name || ''
   }));
 

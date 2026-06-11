@@ -398,13 +398,13 @@ export default function CreateSurvey() {
   const navigate  = useNavigate();
   const { user }  = useAuth();
 
-  /* Guard – only ADMIN */
-  if (user && user.role !== 'ADMIN') {
+  /* Guard – only ADMIN and COMPANY_ADMIN */
+  if (user && user.role !== 'ADMIN' && user.role !== 'COMPANY_ADMIN') {
     return (
       <div className="page-container" style={{ maxWidth: 600, textAlign: 'center', paddingTop: '4rem' }}>
         <AlertTriangle size={48} style={{ color: '#f59e0b', marginBottom: '1rem' }} />
         <h2 style={{ color: 'var(--text-primary)' }}>Acceso restringido</h2>
-        <p style={{ color: 'var(--text-muted)' }}>Solo los administradores globales pueden crear encuestas.</p>
+        <p style={{ color: 'var(--text-muted)' }}>Solo los administradores pueden crear encuestas.</p>
       </div>
     );
   }

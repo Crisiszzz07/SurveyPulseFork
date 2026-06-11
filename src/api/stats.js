@@ -17,7 +17,7 @@ export async function getGlobalStats() {
     
     // 2. Ranking de empresas
     const companyStats = groupStatsByCompany(attempts);
-    const ranking = [...companyStats].sort((a, b) => b.averageScore - a.averageScore);
+    const ranking = [...companyStats].sort((a, b) => b.averagePercentage - a.averagePercentage);
     
     // 3. Distribución global de niveles de madurez
     const distribution = attempts.reduce((acc, curr) => {

@@ -184,7 +184,7 @@ export const Surveys = () => {
 
   const navigate  = useNavigate();
   const { user }  = useAuth();
-  const isAdmin   = user?.role === 'ADMIN';
+  const isAdmin   = user?.role === 'ADMIN' || user?.role === 'COMPANY_ADMIN';
 
   /* ── Load surveys ── */
   const load = async () => {

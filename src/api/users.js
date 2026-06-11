@@ -118,3 +118,47 @@ export async function deleteUser(id) {
     return { success: false, error: 'Usuario no encontrado' };
   }
 }
+
+/**
+ * Crea un nuevo usuario en la base de datos de Supabase.
+ * Soporta fallback simulado para el modo de prueba.
+ */
+export async function createUser({ nombre, apellido, email, password, rol, empresa_id, estado = 'ACTIVO' }) {
+  try {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('User')
+      .insert([{
+        id,
+        nombre: nombre.trim(),
+        apellido: apellido.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        rol,
+        empresa_id: empresa_id || null,
+        estado,
+        created_at: now,
+        updated_at: now
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, user: data };
+  } catch (err) {
+    console.warn('Usando creación de usuario simulada:', err.message);
+    const id = `mock-${crypto.randomUUID()}`;
+    const newUser = {
+      id,
+      nombre: nombre.trim(),
+      apellido: apellido.trim(),
+      email: email.trim().toLowerCase(),
+      rol,
+      empresa_id: empresa_id || null,
+      estado
+    };
+    MOCK_USERS.push(newUser);
+    return { success: true, user: newUser };
+  }
+}

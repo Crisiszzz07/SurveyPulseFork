@@ -513,7 +513,7 @@ export const CompanyView = () => {
                 <div className="company-mini-stats">
                   <div className="mini-stat">
                     <span className="mini-stat-label">Puntaje Promedio</span>
-                    <span className="mini-stat-value">{selectedCompany.averageScore}%</span>
+                    <span className="mini-stat-value">{selectedCompany.averagePercentage}%</span>
                   </div>
                   <div className="mini-stat">
                     <span className="mini-stat-label">Evaluaciones</span>
@@ -540,47 +540,49 @@ export const CompanyView = () => {
                   <p className="card-subtitle">Listado de todas las evaluaciones enviadas.</p>
                 </div>
                 <div className="card-body">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Evaluación</th>
-                        <th>Fecha de Finalización</th>
-                        <th>Resultado</th>
-                        <th>Nivel de Madurez</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedCompany.attempts.map((attempt) => (
-                        <tr key={attempt.id}>
-                          <td><strong>{surveysMap[attempt.survey_id] || 'Encuesta general'}</strong></td>
-                          <td>
-                            <div className="table-date">
-                              <Calendar size={14} style={{ marginRight: '6px' }} />
-                              {new Date(attempt.completed_at).toLocaleDateString('es-ES', {
-                                year: 'numeric', month: 'long', day: 'numeric',
-                              })}
-                            </div>
-                          </td>
-                          <td><span className="table-score">{attempt.total_score}%</span></td>
-                          <td>
-                            <span className={`maturity-tag ${attempt.maturity_level?.toLowerCase()}`}>
-                              {translateMaturityLevel(attempt.maturity_level)}
-                            </span>
-                          </td>
-                          <td>
-                            <Link
-                              to={`/surveys/${attempt.survey_id}?attempt=${attempt.id}`}
-                              className="table-action-link"
-                            >
-                              <span>Ver reporte</span>
-                              <ExternalLink size={14} />
-                            </Link>
-                          </td>
+                  <div className="data-table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Evaluación</th>
+                          <th>Fecha de Finalización</th>
+                          <th>Resultado</th>
+                          <th>Nivel de Madurez</th>
+                          <th>Acciones</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {selectedCompany.attempts.map((attempt) => (
+                          <tr key={attempt.id}>
+                            <td><strong>{surveysMap[attempt.survey_id] || 'Encuesta general'}</strong></td>
+                            <td>
+                              <div className="table-date">
+                                <Calendar size={14} style={{ marginRight: '6px' }} />
+                                {new Date(attempt.completed_at).toLocaleDateString('es-ES', {
+                                  year: 'numeric', month: 'long', day: 'numeric',
+                                })}
+                              </div>
+                            </td>
+                            <td><span className="table-score">{attempt.total_score}%</span></td>
+                            <td>
+                              <span className={`maturity-tag ${attempt.maturity_level?.toLowerCase()}`}>
+                                {translateMaturityLevel(attempt.maturity_level)}
+                              </span>
+                            </td>
+                            <td>
+                              <Link
+                                to={`/surveys/${attempt.survey_id}?attempt=${attempt.id}`}
+                                className="table-action-link"
+                              >
+                                <span>Ver reporte</span>
+                                <ExternalLink size={14} />
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
