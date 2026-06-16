@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSurveys, deleteSurvey } from '../api/surveys';
 import { createAttempt } from '../api/attempts';
+import { getSurveyAttempts } from '../api/attempts';
 import { useAuth } from '../hooks/useAuth';
+import { generateGeneralPDF } from '../utils/pdfGenerator';
 import {
   ClipboardList,
   ArrowRight,
@@ -15,6 +17,7 @@ import {
   Check,
   X,
   Upload,
+  FileText,
 } from 'lucide-react';
 
 /* ─── Archive Confirm Modal ───────────────────────────────────── */
@@ -181,6 +184,7 @@ export const Surveys = () => {
   const [archivingTarget, setArchivingTarget] = useState(null);
   const [toast, setToast]               = useState(null);
   const [isMockData, setIsMockData]     = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const navigate  = useNavigate();
   const { user }  = useAuth();
@@ -259,6 +263,21 @@ export const Surveys = () => {
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3200);
+  };
+
+  /* ── Export General PDF ── */
+  const handleExportGeneralPDF = async () => {
+    if (exportingPDF) return;
+    setExportingPDF(true);
+    try {
+      const allAttempts = await getSurveyAttempts();
+      await generateGeneralPDF(surveys, allAttempts);
+    } catch (err) {
+      console.error('Error generando PDF general:', err);
+      showToast('Error al generar el reporte PDF', 'error');
+    } finally {
+      setExportingPDF(false);
+    }
   };
 
   /* ── Loading ── */
@@ -352,6 +371,34 @@ export const Surveys = () => {
         </div>
         {isAdmin && (
           <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {/* Botón PDF General */}
+            <button
+              id="export-general-pdf"
+              onClick={handleExportGeneralPDF}
+              disabled={exportingPDF}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '0.6rem 1.25rem',
+                borderRadius: 'var(--border-radius)',
+                background: exportingPDF ? 'rgba(16,185,129,0.5)' : 'rgba(16,185,129,0.1)',
+                border: '1px solid rgba(16,185,129,0.35)',
+                color: '#10b981',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                cursor: exportingPDF ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { if (!exportingPDF) e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.2)'; }}
+              onMouseLeave={e => { if (!exportingPDF) e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.1)'; }}
+            >
+              {exportingPDF
+                ? <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Generando…</>
+                : <><FileText size={14} /> Reporte General PDF</>
+              }
+            </button>
+
             <Link
               to="/surveys/import"
               className="btn-secondary"

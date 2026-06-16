@@ -1,54 +1,28 @@
-import { supabase } from './supabase';
+import { apiFetch } from './supabase';
 
 /**
  * Registra un nuevo usuario en el sistema.
- * Si el rol es COMPANY_ADMIN, se puede simular la creación de la empresa vinculada.
+ * Si el rol es COMPANY_ADMIN, creará también la empresa.
  */
 export async function registerUser({ email, password, nombre, apellido, rol, nombreEmpresa, nitEmpresa, sectorEmpresa }) {
   try {
-    // En Supabase real:
-    // 1. Si es COMPANY_ADMIN, creamos la empresa primero
-    let empresaId = null;
-    if (rol === 'COMPANY_ADMIN' && nombreEmpresa) {
-      const { data: newCompany, error: compError } = await supabase
-        .from('Company')
-        .insert([{ nombre_empresa: nombreEmpresa, nit: nitEmpresa, sector: sectorEmpresa }])
-        .select()
-        .single();
-      if (compError) throw compError;
-      empresaId = newCompany.id;
-    }
-
-    // 2. Registramos el usuario en Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          nombre,
-          apellido,
-          rol,
-          empresa_id: empresaId
-        }
-      }
-    });
-    if (authError) throw authError;
-
-    return { success: true, user: authData.user };
-  } catch (err) {
-    console.warn('Usando registro simulado:', err.message);
-    // Simulación exitosa para pruebas
-    return {
-      success: true,
-      user: {
-        id: 'mock-registered-id',
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: {
         email,
+        password,
         nombre,
         apellido,
         rol,
-        empresa_id: rol === 'COMPANY_ADMIN' ? 'mock-comp-id' : null
+        nombreEmpresa,
+        nitEmpresa,
+        sectorEmpresa
       }
-    };
+    });
+    return data;
+  } catch (err) {
+    console.error('Error en registro:', err.message);
+    return { success: false, error: err.message };
   }
 }
 
@@ -57,18 +31,18 @@ export async function registerUser({ email, password, nombre, apellido, rol, nom
  */
 export async function loginUser(email, password) {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return { success: true, session: data.session, user: data.user };
-  } catch (err) {
-    console.warn('Usando inicio de sesión simulado:', err.message);
-    // Verificar contra las cuentas del AuthContext
-    if (email === 'admin@test.com' || email === 'companyadmin@test.com' || email === 'evaluator@test.com') {
-      return { 
-        success: true, 
-        user: { email, id: 'mock-user-id', name: 'Usuario Prueba' } 
-      };
+    const data = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: { email, password }
+    });
+    
+    if (data.success && data.token) {
+      localStorage.setItem('survey_dashboard_token', data.token);
     }
+    
+    return data;
+  } catch (err) {
+    console.error('Error al iniciar sesión:', err.message);
     return { success: false, error: err.message };
   }
 }
@@ -78,56 +52,50 @@ export async function loginUser(email, password) {
  */
 export async function logoutUser() {
   try {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    return { success: true };
+    await apiFetch('/auth/logout', { method: 'POST' });
   } catch (err) {
-    console.warn('Usando logout simulado:', err.message);
-    return { success: true };
+    console.warn('Error al hacer logout en backend:', err.message);
+  } finally {
+    localStorage.removeItem('survey_dashboard_token');
   }
+  return { success: true };
 }
 
 /**
- * Emite nuevos tokens refrescando la sesión.
- * Supabase gestiona esto automáticamente en background, pero exponemos la función por alineación.
+ * Emite nuevos tokens refrescando la sesión. (Simulado)
  */
 export async function refreshSession() {
-  try {
-    const { data, error } = await supabase.auth.refreshSession();
-    if (error) throw error;
-    return { success: true, session: data.session };
-  } catch (err) {
-    console.warn('Refresh de sesión simulado finalizado.');
-    return { success: true };
-  }
+  return { success: true };
 }
 
 /**
- * Solicita enlace o código temporal de recuperación de contraseña.
+ * Solicita enlace de recuperación de contraseña.
  */
 export async function recoverPassword(email) {
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+    const data = await apiFetch('/auth/recover', {
+      method: 'POST',
+      body: { email }
     });
-    if (error) throw error;
-    return { success: true };
+    return data;
   } catch (err) {
-    console.warn('Recuperación de contraseña simulada enviada a:', email);
-    return { success: true, code: '123456' }; // Código simulado expuesto
+    console.error('Error al solicitar recuperación:', err.message);
+    return { success: false, error: err.message };
   }
 }
 
 /**
- * Restablece la contraseña definitiva con un token/código válido.
+ * Restablece la contraseña definitiva.
  */
 export async function resetPassword(newPassword) {
   try {
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) throw error;
-    return { success: true };
+    const data = await apiFetch('/auth/reset-password', {
+      method: 'POST',
+      body: { password: newPassword }
+    });
+    return data;
   } catch (err) {
-    console.warn('Reestablecimiento de contraseña simulado finalizado.');
-    return { success: true };
+    console.error('Error al reestablecer contraseña:', err.message);
+    return { success: false, error: err.message };
   }
 }

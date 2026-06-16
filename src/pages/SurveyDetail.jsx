@@ -5,8 +5,9 @@ import { deleteSurvey } from '../api/surveys';
 import { useAuth } from '../hooks/useAuth';
 import MaturityRadar from '../components/charts/MaturityRadar';
 import AnswerPieChart from '../components/charts/AnswerPieChart';
-import { Award, ClipboardCheck, PieChart, ChevronDown, ChevronUp, Archive, AlertTriangle, RefreshCw, X, Check } from 'lucide-react';
+import { Award, ClipboardCheck, PieChart, ChevronDown, ChevronUp, Archive, AlertTriangle, RefreshCw, X, Check, FileDown } from 'lucide-react';
 import { translateMaturityLevel } from '../utils/dataTransformers';
+import { generateSurveyPDF } from '../utils/pdfGenerator';
 
 function ArchiveModal({ titulo, onConfirm, onClose }) {
   const [archiving, setArchiving] = useState(false);
@@ -101,6 +102,31 @@ export const SurveyDetail = () => {
   const [showArchiveModal, setShowArchiveModal]   = useState(false);
   const [archiveDone, setArchiveDone]             = useState(false);
   const [archiveError, setArchiveError]           = useState('');
+  const [exportingPDF, setExportingPDF]           = useState(false);
+
+  const handleExportPDF = async () => {
+    if (!survey || !selectedAttempt) return;
+    setExportingPDF(true);
+    try {
+      await generateSurveyPDF(
+        survey.titulo,
+        survey.descripcion || '',
+        {
+          company:    selectedAttempt.company?.nombre_empresa || 'Empresa Desconocida',
+          date:       selectedAttempt.completed_at
+                        ? new Date(selectedAttempt.completed_at).toLocaleDateString('es-CO')
+                        : 'N/A',
+          totalScore: selectedAttempt.total_score ?? 'N/A',
+        },
+        survey.questions || [],
+        answers
+      );
+    } catch (err) {
+      console.error('Error generando PDF:', err);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -201,23 +227,50 @@ export const SurveyDetail = () => {
           </h1>
           <p className="page-subtitle">{survey.descripcion}</p>
         </div>
-        {isAdmin && survey.status !== 'ARCHIVED' && survey.is_active !== false && (
-          <button
-            id="archive-survey-detail"
-            onClick={() => setShowArchiveModal(true)}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '0.5rem 1.1rem', borderRadius: '9px',
-              background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-              color: '#ef4444', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.18)'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'}
-          >
-            <Archive size={15} /> Archivar encuesta
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Botón PDF individual */}
+          {selectedAttempt && (
+            <button
+              id="export-survey-pdf"
+              onClick={handleExportPDF}
+              disabled={exportingPDF}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '0.5rem 1.1rem', borderRadius: '9px',
+                background: exportingPDF ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.12)',
+                border: '1px solid rgba(99,102,241,0.35)',
+                color: 'var(--primary-color)', fontWeight: 700, fontSize: '0.85rem',
+                cursor: exportingPDF ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { if (!exportingPDF) e.currentTarget.style.backgroundColor = 'rgba(99,102,241,0.22)'; }}
+              onMouseLeave={e => { if (!exportingPDF) e.currentTarget.style.backgroundColor = 'rgba(99,102,241,0.12)'; }}
+            >
+              {exportingPDF
+                ? <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Generando…</>
+                : <><FileDown size={14} /> Exportar PDF</>
+              }
+            </button>
+          )}
+
+          {isAdmin && survey.status !== 'ARCHIVED' && survey.is_active !== false && (
+            <button
+              id="archive-survey-detail"
+              onClick={() => setShowArchiveModal(true)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '0.5rem 1.1rem', borderRadius: '9px',
+                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+                color: '#ef4444', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.18)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'}
+            >
+              <Archive size={15} /> Archivar encuesta
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Attempt Selector */}

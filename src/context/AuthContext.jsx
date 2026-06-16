@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { supabase } from '../api/supabase';
+import { loginUser, logoutUser } from '../api/auth';
 
 export const AuthContext = createContext(null);
 
@@ -7,62 +7,48 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount, restore session from localStorage
+  // Al montar, restauramos la sesión de localStorage si existe
   useEffect(() => {
     const savedUser = localStorage.getItem('survey_dashboard_user');
-    if (savedUser) {
+    const token = localStorage.getItem('survey_dashboard_token');
+    
+    if (savedUser && token) {
       try {
         setUser(JSON.parse(savedUser));
       } catch {
         localStorage.removeItem('survey_dashboard_user');
+        localStorage.removeItem('survey_dashboard_token');
       }
+    } else {
+      // Si falta el token o el usuario, limpiamos todo
+      localStorage.removeItem('survey_dashboard_user');
+      localStorage.removeItem('survey_dashboard_token');
     }
     setLoading(false);
   }, []);
 
   /**
-   * Login: queries the custom User table directly.
-   * The password in the DB is stored in plain text (as per the current schema).
+   * Inicio de sesión utilizando nuestro backend propio.
    */
   const login = async (email, password) => {
     setLoading(true);
     try {
-      // Query the real User table by email
-      const { data: users, error } = await supabase
-        .from('User')
-        .select('id, nombre, apellido, email, rol, empresa_id, estado, password')
-        .eq('email', email.trim().toLowerCase())
-        .limit(1);
+      const result = await loginUser(email, password);
 
-      if (error) throw error;
-
-      if (!users || users.length === 0) {
+      if (!result.success) {
         setLoading(false);
-        return { success: false, error: 'Correo electrónico no registrado en el sistema.' };
+        return { success: false, error: result.error || 'Credenciales incorrectas.' };
       }
 
-      const dbUser = users[0];
-
-      // Check password (plain text comparison as per schema)
-      if (dbUser.password !== password) {
-        setLoading(false);
-        return { success: false, error: 'Contraseña incorrecta.' };
-      }
-
-      if (dbUser.estado && dbUser.estado !== 'ACTIVO') {
-        setLoading(false);
-        return { success: false, error: 'Usuario inactivo. Contacte al administrador.' };
-      }
-
-      // Build the session user object — includes real DB id and empresa_id
+      // El usuario retornado por el backend ya viene en el formato adecuado
       const sessionUser = {
-        id: dbUser.id,
-        email: dbUser.email,
-        name: `${dbUser.nombre} ${dbUser.apellido}`,
-        nombre: dbUser.nombre,
-        apellido: dbUser.apellido,
-        role: dbUser.rol,   // ADMIN | COMPANY_ADMIN | EVALUATOR
-        empresa_id: dbUser.empresa_id || null,
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name || `${result.user.nombre} ${result.user.apellido}`,
+        nombre: result.user.nombre,
+        apellido: result.user.apellido,
+        role: result.user.role || result.user.rol,
+        empresa_id: result.user.empresa_id || null,
         isMock: false,
       };
 
@@ -78,9 +64,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Cierre de sesión eliminando tokens e información local.
+   */
   const logout = async () => {
-    setUser(null);
-    localStorage.removeItem('survey_dashboard_user');
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.error('Error durante logout:', err);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('survey_dashboard_user');
+      localStorage.removeItem('survey_dashboard_token');
+    }
   };
 
   return (

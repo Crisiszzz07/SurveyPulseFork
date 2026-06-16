@@ -165,35 +165,34 @@ INSERT INTO "Company" (id, nombre_empresa, nit, sector, correo) VALUES
 
 -- Insertar usuarios de prueba (Nota: En producción, contraseñas deben estar encriptadas)
 INSERT INTO "User" (id, nombre, apellido, email, password, rol, empresa_id) VALUES
-('u1111111-1111-1111-1111-111111111111', 'Admin', 'Global', 'admin@test.com', 'password123', 'ADMIN', NULL),
-('u2222222-2222-2222-2222-222222222222', 'Admin', 'Empresa', 'companyadmin@test.com', 'password123', 'COMPANY_ADMIN', 'c1111111-1111-1111-1111-111111111111'),
-('u3333333-3333-3333-3333-333333333333', 'Evaluador', 'Externo', 'evaluator@test.com', 'password123', 'EVALUATOR', NULL);
+('11111111-1111-1111-1111-111111111111', 'Admin', 'Global', 'admin@test.com', 'password123', 'ADMIN', NULL),
+('22222222-2222-2222-2222-222222222222', 'Admin', 'Empresa', 'companyadmin@test.com', 'password123', 'COMPANY_ADMIN', 'c1111111-1111-1111-1111-111111111111'),
+('33333333-3333-3333-3333-333333333333', 'Evaluador', 'Externo', 'evaluator@test.com', 'password123', 'EVALUATOR', NULL);
 
 -- Insertar Categorías de Preguntas
 INSERT INTO "Category" (id, name, description) VALUES
-('cat-11111-1111-1111-1111-111111111111', 'Planificación', 'Preguntas asociadas a metodologías y planificación ágil'),
-('cat-22222-2222-2222-2222-222222222222', 'Mejora Continua', 'Procesos de retroalimentación e iteración rápida'),
-('cat-33333-3333-3333-3333-333333333333', 'Roles', 'Claridad y presencia de figuras del equipo en el día a día'),
-('cat-44444-4444-4444-4444-444444444444', 'Métricas', 'Uso de data e indicadores clave en el equipo'),
-('cat-55555-5555-5555-5555-555555555555', 'Ingeniería', 'Prácticas modernas de desarrollo, testing y CI/CD');
+('ca111111-1111-1111-1111-111111111111', 'Planificación', 'Preguntas asociadas a metodologías y planificación ágil'),
+('ca222222-2222-2222-2222-222222222222', 'Mejora Continua', 'Procesos de retroalimentación e iteración rápida'),
+('ca333333-3333-3333-3333-333333333333', 'Roles', 'Claridad y presencia de figuras del equipo en el día a día'),
+('ca444444-4444-4444-4444-444444444444', 'Métricas', 'Uso de data e indicadores clave en el equipo'),
+('ca555555-5555-5555-5555-555555555555', 'Ingeniería', 'Prácticas modernas de desarrollo, testing y CI/CD');
 
 -- Insertar Encuesta de prueba
 INSERT INTO "Survey" (id, titulo, descripcion, version, is_active, status, created_by) VALUES
-('s1111111-1111-1111-1111-111111111111', 'Evaluación de Madurez Ágil', 'Mide la madurez y adopción de prácticas ágiles en tus equipos.', 1, true, 'ACTIVE', 'u1111111-1111-1111-1111-111111111111');
+('51111111-1111-1111-1111-111111111111', 'Evaluación de Madurez Ágil', 'Mide la madurez y adopción de prácticas ágiles en tus equipos.', 1, true, 'ACTIVE', '11111111-1111-1111-1111-111111111111');
 
 -- Insertar Preguntas para la encuesta de prueba
 INSERT INTO "Question" (id, survey_id, category_id, pregunta, tipo, orden, obligatorio) VALUES
-('q1-111111-1111-1111-1111-111111111111', 's1111111-1111-1111-1111-111111111111', 'cat-11111-1111-1111-1111-111111111111', '¿Los equipos planifican sus iteraciones de forma colaborativa?', 'LIKERT', 1, true),
-('q2-222222-2222-2222-2222-222222222222', 's1111111-1111-1111-1111-111111111111', 'cat-22222-2222-2222-2222-222222222222', '¿Se realizan retrospectivas al final de cada iteración?', 'LIKERT', 2, true),
-('q3-333333-3333-3333-3333-333333333333', 's1111111-1111-1111-1111-111111111111', 'cat-33333-3333-3333-3333-333333333333', '¿El Product Owner está disponible para resolver dudas diariamente?', 'LIKERT', 3, true),
-('q4-444444-4444-4444-4444-444444444444', 's1111111-1111-1111-1111-111111111111', 'cat-44444-4444-4444-4444-444444444444', '¿Se utilizan métricas de velocidad o rendimiento para estimar?', 'LIKERT', 4, true),
-('q5-555555-5555-5555-5555-555555555555', 's1111111-1111-1111-1111-111111111111', 'cat-55555-5555-5555-5555-555555555555', '¿Hay un proceso automatizado para el despliegue a producción?', 'LIKERT', 5, true);
+('e1111111-1111-1111-1111-111111111111', '51111111-1111-1111-1111-111111111111', 'ca111111-1111-1111-1111-111111111111', '¿Los equipos planifican sus iteraciones de forma colaborativa?', 'LIKERT', 1, true),
+('e2222222-2222-2222-2222-222222222222', '51111111-1111-1111-1111-111111111111', 'ca222222-2222-2222-2222-222222222222', '¿Se realizan retrospectivas al final de cada iteración?', 'LIKERT', 2, true),
+('e3333333-3333-3333-3333-333333333333', '51111111-1111-1111-1111-111111111111', 'ca333333-3333-3333-3333-333333333333', '¿El Product Owner está disponible para resolver dudas diariamente?', 'LIKERT', 3, true),
+('e4444444-4444-4444-4444-444444444444', '51111111-1111-1111-1111-111111111111', 'ca444444-4444-4444-4444-444444444444', '¿Se utilizan métricas de velocidad o rendimiento para estimar?', 'LIKERT', 4, true),
+('e5555555-5555-5555-5555-555555555555', '51111111-1111-1111-1111-111111111111', 'ca555555-5555-5555-5555-555555555555', '¿Hay un proceso automatizado para el despliegue a producción?', 'LIKERT', 5, true);
 
 -- Insertar opciones genéricas Likert (1 a 5)
--- Nota: En Prisma estas opciones se relacionarían a cada pregunta.
 INSERT INTO "QuestionOption" (id, question_id, texto, valor) VALUES
-('opt1-q1', 'q1-111111-1111-1111-1111-111111111111', 'Nunca se hace', 1),
-('opt2-q1', 'q1-111111-1111-1111-1111-111111111111', 'Raras veces se hace', 2),
-('opt3-q1', 'q1-111111-1111-1111-1111-111111111111', 'A veces se hace', 3),
-('opt4-q1', 'q1-111111-1111-1111-1111-111111111111', 'Frecuentemente se hace', 4),
-('opt5-q1', 'q1-111111-1111-1111-1111-111111111111', 'Siempre se hace sin falta', 5);
+('b1111111-1111-1111-1111-111111111111', 'e1111111-1111-1111-1111-111111111111', 'Nunca se hace', 1),
+('b2222222-2222-2222-2222-222222222222', 'e1111111-1111-1111-1111-111111111111', 'Raras veces se hace', 2),
+('b3333333-3333-3333-3333-333333333333', 'e1111111-1111-1111-1111-111111111111', 'A veces se hace', 3),
+('b4444444-4444-4444-4444-444444444444', 'e1111111-1111-1111-1111-111111111111', 'Frecuentemente se hace', 4),
+('b5555555-5555-5555-5555-555555555555', 'e1111111-1111-1111-1111-111111111111', 'Siempre se hace sin falta', 5);

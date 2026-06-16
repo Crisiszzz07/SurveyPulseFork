@@ -1,22 +1,17 @@
-import { supabase } from './supabase';
+import { apiFetch } from './supabase';
 import { createSurvey, createQuestions } from './surveys';
 
 /**
- * Verifica si ya existe una encuesta activa con el mismo título en Supabase.
+ * Verifica si ya existe una encuesta activa con el mismo título en la base de datos local.
  */
 export async function checkDuplicateSurvey(titulo) {
   try {
-    const { data, error } = await supabase
-      .from('Survey')
-      .select('id')
-      .eq('titulo', titulo.trim())
-      .eq('is_active', true)
-      .limit(1);
-
-    if (error) throw error;
-    return data && data.length > 0;
+    const data = await apiFetch(`/surveys/check-duplicate?titulo=${encodeURIComponent(titulo.trim())}`, {
+      method: 'GET'
+    });
+    return data.exists;
   } catch (err) {
-    console.warn('⚠️ No se pudo verificar duplicado en BD, asumiendo falso para demo:', err.message);
+    console.error('Error al verificar encuesta duplicada:', err.message);
     return false;
   }
 }
@@ -26,63 +21,18 @@ export async function checkDuplicateSurvey(titulo) {
  * Si alguna categoría no existe en la BD, la crea automáticamente.
  */
 export async function getOrCreateCategories(categoryNames) {
-  const uniqueNames = [...new Set(categoryNames.map(n => n.trim()))].filter(Boolean);
-  const nameToId = {};
-
-  if (uniqueNames.length === 0) {
-    return nameToId;
-  }
-
   try {
-    // 1. Obtener todas las categorías existentes
-    const { data: existing, error: selectErr } = await supabase
-      .from('Category')
-      .select('id, name');
-
-    if (selectErr) throw selectErr;
-
-    const existingMap = {};
-    if (existing) {
-      existing.forEach(cat => {
-        existingMap[cat.name.toLowerCase().trim()] = cat.id;
-      });
-    }
-
-    // 2. Identificar cuáles faltan por crear
-    const missingNames = uniqueNames.filter(name => !existingMap[name.toLowerCase().trim()]);
-
-    if (missingNames.length > 0) {
-      // Insertar las categorías faltantes en lote
-      const insertPayload = missingNames.map(name => ({
-        id: crypto.randomUUID(),
-        name,
-        description: `Categoría importada automáticamente`
-      }));
-
-      const { data: inserted, error: insertErr } = await supabase
-        .from('Category')
-        .insert(insertPayload)
-        .select('id, name');
-
-      if (insertErr) throw insertErr;
-
-      if (inserted) {
-        inserted.forEach(cat => {
-          existingMap[cat.name.toLowerCase().trim()] = cat.id;
-        });
+    const data = await apiFetch('/categories/get-or-create', {
+      method: 'POST',
+      body: {
+        names: categoryNames
       }
-    }
-
-    // 3. Mapear todos los nombres de entrada a sus respectivos UUIDs
-    uniqueNames.forEach(name => {
-      nameToId[name] = existingMap[name.toLowerCase().trim()];
     });
-
-    return nameToId;
+    return data.categoryMap || {};
   } catch (err) {
-    console.warn('⚠️ Error al obtener/crear categorías en Supabase, simulando IDs para demo:', err.message);
-    // Simular IDs para modo demostración
-    uniqueNames.forEach((name, i) => {
+    console.error('Error en getOrCreateCategories:', err.message);
+    const nameToId = {};
+    categoryNames.forEach((name, i) => {
       nameToId[name] = `mock-cat-${i + 1}`;
     });
     return nameToId;
@@ -108,18 +58,19 @@ export async function importSurvey({ surveyMeta, questions }) {
     const categoryMap = await getOrCreateCategories(categoryNames);
 
     // 3. Crear encuesta
-    const surveyRes = await createSurvey({
+    const surveyMetaWithCreatedBy = {
       titulo: surveyMeta.titulo.trim(),
       descripcion: surveyMeta.descripcion?.trim() || null,
       status: surveyMeta.status || 'DRAFT',
       version: Number(surveyMeta.version || 1),
-      created_by: surveyMeta.created_by,
-    });
+      created_by: surveyMeta.created_by
+    };
+    
+    const surveyRes = await createSurvey(surveyMetaWithCreatedBy);
 
     if (!surveyRes.success) throw new Error(surveyRes.error || 'Error al registrar encuesta');
 
     const surveyId = surveyRes.survey.id;
-    const isMock = surveyId.startsWith('mock-');
 
     // 4. Crear preguntas y opciones
     const preparedQuestions = questions.map(q => ({
@@ -136,9 +87,13 @@ export async function importSurvey({ surveyMeta, questions }) {
       const qRes = await createQuestions(surveyId, preparedQuestions, defaultCategoryId);
       
       if (!qRes.success) {
-        // Limpieza si no es mock (intentar revertir inserción de la encuesta)
-        if (!isMock) {
-          await supabase.from('Survey').delete().eq('id', surveyId);
+        // Limpieza: intentar borrar la encuesta creada si fallaron las preguntas
+        try {
+          await apiFetch(`/surveys/${surveyId}`, {
+            method: 'DELETE'
+          });
+        } catch (delErr) {
+          console.warn('No se pudo limpiar la encuesta fallida:', delErr.message);
         }
         throw new Error(qRes.error || 'Error al registrar las preguntas de la encuesta');
       }

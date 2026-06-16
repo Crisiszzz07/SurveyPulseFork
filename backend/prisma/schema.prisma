@@ -1,0 +1,223 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  COMPANY_ADMIN
+  EVALUATOR
+}
+
+enum SurveyStatus {
+  ACTIVE
+  ARCHIVED
+  DRAFT
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+}
+
+enum QuestionType {
+  LIKERT
+  MULTIPLE_CHOICE
+  YES_NO
+  OPEN_TEXT
+  NUMERIC
+}
+
+enum MaturityLevel {
+  CRITICAL
+  LOW
+  MEDIUM
+  HIGH
+  EXCELLENT
+}
+
+model Company {
+  id             String          @id @default(uuid())
+  nombre_empresa String
+  nit            String          @unique
+  sector         String
+  direccion      String?
+  telefono       String?
+  correo         String
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  
+  users          User[]
+  attempts       SurveyAttempt[]
+
+  @@index([nit])
+}
+
+model User {
+  id             String             @id @default(uuid())
+  nombre         String
+  apellido       String
+  email          String             @unique
+  password       String
+  rol            UserRole           @default(EVALUATOR)
+  empresa_id     String?
+  estado         String             @default("ACTIVO") // ACTIVO, INACTIVO
+  created_at     DateTime           @default(now())
+  updated_at     DateTime           @updatedAt
+
+  company        Company?           @relation(fields: [empresa_id], references: [id], onDelete: Cascade)
+  refresh_tokens RefreshToken[]
+  attempts       SurveyAttempt[]    @relation("EvaluatedAttempts")
+  assigned_tasks SurveyAssignment[] @relation("AssignedTo")
+  created_assignments SurveyAssignment[] @relation("AssignedBy")
+  created_surveys Survey[]           @relation("SurveyCreator")
+  audit_logs     AuditLog[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token_hash String   @unique
+  expires_at DateTime
+  revoked    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  questions   Question[]
+}
+
+model Survey {
+  id          String             @id @default(uuid())
+  titulo      String
+  descripcion String?
+  version     Int                @default(1)
+  is_active   Boolean            @default(true)
+  status      SurveyStatus       @default(DRAFT)
+  created_by  String
+  created_at  DateTime           @default(now())
+  updated_at  DateTime           @updatedAt
+
+  creator     User               @relation("SurveyCreator", fields: [created_by], references: [id])
+  questions   Question[]
+  attempts    SurveyAttempt[]
+  assignments SurveyAssignment[]
+}
+
+model Question {
+  id                  String           @id @default(uuid())
+  survey_id           String
+  category_id         String
+  pregunta            String
+  tipo                QuestionType     @default(LIKERT)
+  orden               Int
+  obligatorio         Boolean          @default(true)
+  categoria_indicador String?
+
+  survey              Survey           @relation(fields: [survey_id], references: [id], onDelete: Cascade)
+  category            Category         @relation(fields: [category_id], references: [id])
+  options             QuestionOption[]
+  answers             SurveyAnswer[]
+
+  @@index([survey_id])
+}
+
+model QuestionOption {
+  id          String         @id @default(uuid())
+  question_id String
+  texto       String
+  valor       Float
+
+  question    Question       @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  answers     SurveyAnswer[]
+}
+
+model SurveyAttempt {
+  id             String        @id @default(uuid())
+  survey_id      String
+  company_id     String
+  evaluator_id   String
+  status         AttemptStatus @default(IN_PROGRESS)
+  started_at     DateTime      @default(now())
+  completed_at   DateTime?
+  total_score    Float?
+  percentage     Float?
+  maturity_level MaturityLevel?
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+
+  survey         Survey        @relation(fields: [survey_id], references: [id], onDelete: Restrict)
+  company        Company       @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  evaluator      User          @relation("EvaluatedAttempts", fields: [evaluator_id], references: [id], onDelete: Restrict)
+  answers        SurveyAnswer[]
+
+  @@index([company_id])
+  @@index([survey_id])
+}
+
+model SurveyAnswer {
+  id                 String          @id @default(uuid())
+  attempt_id         String
+  question_id        String
+  selected_option_id String?
+  answer_text        String?
+  numeric_value      Float?
+  created_at         DateTime        @default(now())
+
+  attempt            SurveyAttempt   @relation(fields: [attempt_id], references: [id], onDelete: Cascade)
+  question           Question        @relation(fields: [question_id], references: [id], onDelete: Restrict)
+  selected_option    QuestionOption? @relation(fields: [selected_option_id], references: [id], onDelete: Restrict)
+
+  @@unique([attempt_id, question_id])
+  @@index([attempt_id])
+}
+
+model SurveyAssignment {
+  id           String           @id @default(uuid())
+  survey_id    String
+  evaluator_id String
+  assigned_by  String
+  due_date     DateTime?
+  status       AssignmentStatus @default(PENDING)
+  created_at   DateTime         @default(now())
+  updated_at   DateTime         @updatedAt
+
+  survey       Survey           @relation(fields: [survey_id], references: [id], onDelete: Cascade)
+  evaluator    User             @relation("AssignedTo", fields: [evaluator_id], references: [id], onDelete: Cascade)
+  assigner     User             @relation("AssignedBy", fields: [assigned_by], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  user_id       String?
+  action        String
+  entity        String
+  entity_id     String?
+  previous_data Json?
+  new_data      Json?
+  created_at    DateTime @default(now())
+
+  user          User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+}

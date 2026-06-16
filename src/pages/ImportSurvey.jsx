@@ -216,7 +216,7 @@ export default function ImportSurvey() {
           descripcion: meta.descripcion.trim(),
           status: meta.status,
           version: meta.version,
-          created_by: user?.id || 'u1111111-1111-1111-1111-111111111111'
+          created_by: user?.id || '11111111-1111-1111-1111-111111111111'
         },
         questions: questions
       });
