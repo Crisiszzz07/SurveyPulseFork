@@ -1,10 +1,11 @@
 import express from 'express';
+import crypto from 'crypto';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// 1. Obtener lista de encuestas asignadas (Filtrado por evaluador/rol)
+// 1. Obtener lista de encuestas asignadas (Filtrado por evaluador/rol/empresa)
 router.get('/', authenticateToken, async (req, res) => {
   const { evaluatorId, role } = req.query;
 
@@ -18,10 +19,20 @@ router.get('/', authenticateToken, async (req, res) => {
       LEFT JOIN "User" u ON sa.evaluator_id = u.id
     `;
     const params = [];
+    const conditions = [];
 
     if (role === 'EVALUATOR' && evaluatorId) {
-      query += ' WHERE sa.evaluator_id = $1';
+      conditions.push(`sa.evaluator_id = $${conditions.length + 1}`);
       params.push(evaluatorId);
+    }
+
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+      conditions.push(`u.empresa_id = $${conditions.length + 1}`);
+      params.push(req.user.empresa_id);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY sa.created_at DESC';
@@ -49,12 +60,25 @@ router.post('/', authenticateToken, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Los campos survey_id, evaluator_id y assigned_by son requeridos.' });
   }
 
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+    try {
+      const checkEval = await pool.query('SELECT empresa_id FROM "User" WHERE id = $1', [evaluator_id]);
+      if (checkEval.rows.length === 0 || checkEval.rows[0].empresa_id !== req.user.empresa_id) {
+        return res.status(403).json({ success: false, error: 'Solo puedes asignar encuestas a evaluadores de tu propia empresa.' });
+      }
+    } catch (err) {
+      console.error('Error al verificar evaluador:', err);
+      return res.status(500).json({ success: false, error: 'Error interno del servidor.' });
+    }
+  }
+
   try {
+    const id = crypto.randomUUID();
     const insertRes = await pool.query(
-      `INSERT INTO "SurveyAssignment" (survey_id, evaluator_id, assigned_by, due_date, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, 'PENDING', NOW(), NOW())
+      `INSERT INTO "SurveyAssignment" (id, survey_id, evaluator_id, assigned_by, due_date, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, 'PENDING', NOW(), NOW())
        RETURNING *`,
-      [survey_id, evaluator_id, assigned_by, due_date || null]
+      [id, survey_id, evaluator_id, assigned_by, due_date || null]
     );
 
     res.status(201).json({
@@ -74,6 +98,23 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
   if (!status) {
     return res.status(400).json({ success: false, error: 'El campo status es requerido.' });
+  }
+
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+    try {
+      const checkAsg = await pool.query(
+        `SELECT sa.id FROM "SurveyAssignment" sa
+         JOIN "User" u ON sa.evaluator_id = u.id
+         WHERE sa.id = $1 AND u.empresa_id = $2`,
+        [id, req.user.empresa_id]
+      );
+      if (checkAsg.rows.length === 0) {
+        return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+      }
+    } catch (err) {
+      console.error('Error al verificar asignación:', err);
+      return res.status(500).json({ success: false, error: 'Error interno del servidor.' });
+    }
   }
 
   try {
@@ -102,6 +143,23 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // 4. Eliminar o cancelar una asignación
 router.delete('/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
+
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+    try {
+      const checkAsg = await pool.query(
+        `SELECT sa.id FROM "SurveyAssignment" sa
+         JOIN "User" u ON sa.evaluator_id = u.id
+         WHERE sa.id = $1 AND u.empresa_id = $2`,
+        [id, req.user.empresa_id]
+      );
+      if (checkAsg.rows.length === 0) {
+        return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+      }
+    } catch (err) {
+      console.error('Error al verificar asignación para eliminar:', err);
+      return res.status(500).json({ success: false, error: 'Error interno del servidor.' });
+    }
+  }
 
   try {
     const deleteRes = await pool.query(

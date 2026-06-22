@@ -1,0 +1,514 @@
+/* ── Custom easing tokens (Emil Kowalski) ──────────────────── */
+:root {
+  --ease-out-expo: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ── Login layout ──────────────────────────────────────────── */
+.lp-root {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--bg-primary);
+  font-family: var(--font-sans);
+  position: relative;
+}
+
+/* Decorative blobs */
+.lp-blob {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lp-blob-tl {
+  top: -18%;
+  left: -12%;
+  width: 52vw;
+  height: 52vw;
+  background: radial-gradient(circle, rgba(140, 98, 57, 0.07) 0%, transparent 68%);
+}
+
+.lp-blob-br {
+  bottom: -22%;
+  right: -12%;
+  width: 48vw;
+  height: 48vw;
+  background: radial-gradient(circle, rgba(181, 140, 25, 0.06) 0%, transparent 68%);
+}
+
+/* ── Left panel ────────────────────────────────────────────── */
+.lp-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 3.5rem;
+  border-right: 1px solid var(--border-color);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(160deg, rgba(140, 98, 57, 0.04) 0%, rgba(181, 140, 25, 0.03) 100%);
+}
+
+/* Brand — stagger slot 0 */
+.lp-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 3rem;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: lp-fade-up 280ms var(--ease-out-expo) forwards;
+  animation-delay: 40ms;
+}
+
+.lp-brand-icon {
+  font-size: 2.2rem;
+  filter: drop-shadow(0 2px 8px rgba(140, 98, 57, 0.2));
+}
+
+.lp-brand-name {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Headline — stagger slot 1 */
+.lp-headline {
+  font-size: clamp(1.75rem, 2.8vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+  max-width: 500px;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: lp-fade-up 280ms var(--ease-out-expo) forwards;
+  animation-delay: 90ms;
+}
+
+/* Subtitle — stagger slot 2 */
+.lp-sub {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 460px;
+  margin: 0 0 2.75rem;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: lp-fade-up 280ms var(--ease-out-expo) forwards;
+  animation-delay: 140ms;
+}
+
+/* ── Feature cards grid ────────────────────────────────────── */
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 0.9rem;
+  max-width: 560px;
+}
+
+.lp-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.15rem 1.1rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: default;
+  /* Specific properties only — no "all" */
+  transition:
+    transform 200ms var(--ease-out-expo),
+    box-shadow 200ms var(--ease-out-expo),
+    border-color 200ms ease;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* Stagger: 55ms between each card (30–80ms per Emil's guide) */
+.lp-card:nth-child(1) {
+  animation: lp-fade-up 280ms var(--ease-out-expo) forwards;
+  animation-delay: 200ms;
+}
+
+.lp-card:nth-child(2) {
+  animation: lp-fade-up 280ms var(--ease-out-expo) forwards;
+  animation-delay: 255ms;
+}
+
+.lp-card:nth-child(3) {
+  animation: lp-fade-up 280ms var(--ease-out-expo) forwards;
+  animation-delay: 310ms;
+}
+
+.lp-card:nth-child(4) {
+  animation: lp-fade-up 280ms var(--ease-out-expo) forwards;
+  animation-delay: 365ms;
+}
+
+/* Hover only on true pointer devices */
+@media (hover: hover) and (pointer: fine) {
+  .lp-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(140, 98, 57, 0.10);
+    border-color: rgba(140, 98, 57, 0.28);
+  }
+}
+
+.lp-card-icon {
+  font-size: 1.4rem;
+  display: block;
+  margin-bottom: 0.55rem;
+}
+
+.lp-card-title {
+  font-weight: 700;
+  font-size: 0.87rem;
+  color: var(--text-primary);
+  margin: 0 0 0.3rem;
+  line-height: 1.3;
+}
+
+.lp-card-desc {
+  font-size: 0.77rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Security note — stagger slot last */
+.lp-secure {
+  margin-top: 2.75rem;
+  font-size: 0.77rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: lp-fade-up 280ms var(--ease-out-expo) forwards;
+  animation-delay: 420ms;
+}
+
+/* ── Right panel ───────────────────────────────────────────── */
+.lp-right {
+  width: 100%;
+  max-width: 460px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* Glass card — enters from scale(0.96), not scale(0) */
+.lp-form-card {
+  width: 100%;
+  max-width: 390px;
+  background: rgba(255, 255, 255, 0.90);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 2.25rem 1.9rem 2rem;
+  box-shadow: 0 20px 56px rgba(140, 98, 57, 0.09), 0 4px 12px rgba(140, 98, 57, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  opacity: 0;
+  transform: scale(0.96) translateY(10px);
+  animation: lp-card-in 320ms var(--ease-out-expo) forwards;
+  animation-delay: 60ms;
+}
+
+/* ── Form card header ──────────────────────────────────────── */
+.lp-form-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.lp-form-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+  margin: 0 auto 1rem;
+  box-shadow: 0 6px 18px rgba(140, 98, 57, 0.28);
+}
+
+.lp-form-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.3rem;
+}
+
+.lp-form-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Error alert ───────────────────────────────────────────── */
+.lp-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(186, 37, 37, 0.07);
+  border: 1px solid rgba(186, 37, 37, 0.2);
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  color: var(--danger-color);
+  font-size: 0.84rem;
+  font-weight: 600;
+  margin-bottom: 1.1rem;
+  /* Enters from scale(0.97) */
+  opacity: 0;
+  transform: scale(0.97) translateY(-4px);
+  animation: lp-error-in 200ms var(--ease-out-expo) forwards;
+}
+
+/* ── Form fields ───────────────────────────────────────────── */
+.lp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lp-label {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.lp-input-wrap {
+  position: relative;
+}
+
+.lp-input-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.95rem;
+  pointer-events: none;
+  opacity: 0.48;
+}
+
+.lp-input {
+  width: 100%;
+  padding: 0.78rem 1rem 0.78rem 2.65rem;
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: 11px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.93rem;
+  outline: none;
+  box-sizing: border-box;
+  /* Specific transitions only */
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.lp-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+  background: #fff;
+}
+
+/* Password input needs extra right padding for the eye button */
+.lp-input--password {
+  padding-right: 2.6rem;
+}
+
+/* Password eye toggle */
+.lp-eye {
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 3px;
+  opacity: 0.45;
+  transition: opacity 150ms ease;
+  line-height: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-eye:hover {
+    opacity: 1;
+  }
+}
+
+/* Physical press feedback */
+.lp-eye:active {
+  transform: translateY(-50%) scale(0.88);
+}
+
+/* ── Submit button ─────────────────────────────────────────── */
+.lp-submit {
+  margin-top: 0.4rem;
+  width: 100%;
+  padding: 0.87rem;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 11px;
+  font-size: 0.97rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(140, 98, 57, 0.30);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  /* Specific properties */
+  transition:
+    transform 160ms var(--ease-out-expo),
+    box-shadow 160ms var(--ease-out-expo),
+    opacity 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(140, 98, 57, 0.36);
+  }
+}
+
+/* Scale(0.97) on press — physical button feedback */
+.lp-submit:active:not(:disabled) {
+  transform: scale(0.97);
+  box-shadow: 0 3px 10px rgba(140, 98, 57, 0.20);
+}
+
+.lp-submit:disabled {
+  opacity: 0.60;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Fast spinner — fast spin = perceived performance boost */
+.lp-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: lp-spin 550ms linear infinite;
+}
+
+/* ── Divider ───────────────────────────────────────────────── */
+.lp-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+
+.lp-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.lp-divider-text {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── Keyframe animations ───────────────────────────────────── */
+
+/* Card: enters from scale(0.96), not scale(0) */
+@keyframes lp-card-in {
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Generic stagger fade-up for left panel elements */
+@keyframes lp-fade-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Error alert: enters from scale(0.97) */
+@keyframes lp-error-in {
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Fast spinner */
+@keyframes lp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Accessibility: reduced motion ─────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+
+  .lp-brand,
+  .lp-headline,
+  .lp-sub,
+  .lp-card,
+  .lp-secure,
+  .lp-form-card,
+  .lp-error {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .lp-submit,
+  .lp-card,
+  .lp-input,
+  .lp-eye {
+    transition: opacity 150ms ease;
+  }
+
+  .lp-spinner {
+    animation: lp-spin 900ms linear infinite;
+  }
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 820px) {
+  .lp-left {
+    display: none !important;
+  }
+
+  .lp-right {
+    max-width: 100% !important;
+    padding: 2rem 1.25rem !important;
+  }
+}

@@ -116,7 +116,7 @@ export const TakeSurvey = () => {
   const handleSubmit = async () => {
     // Check that all questions have been answered
     const unansweredCount = survey.questions.filter(q => !answersMap[q.id]).length;
-    
+
     if (unansweredCount > 0) {
       showToastMsg(`Faltan ${unansweredCount} preguntas por responder.`, 'error');
       setShowConfirmModal(false);
@@ -125,7 +125,7 @@ export const TakeSurvey = () => {
 
     setSaving(true);
     const answersArray = Object.values(answersMap);
-    
+
     // 1. Save answers first
     const saveResult = await savePartialAnswers(attemptId, answersArray);
     if (!saveResult.success) {
@@ -134,7 +134,7 @@ export const TakeSurvey = () => {
       showToastMsg(`Error al guardar respuestas: ${saveResult.error || 'error desconocido'}`, 'error');
       return;
     }
-    
+
     // 2. Submit the attempt to trigger calculation
     const submitResult = await submitAttempt(attemptId);
     setSaving(false);
@@ -176,8 +176,8 @@ export const TakeSurvey = () => {
 
       {/* Header */}
       <header className="page-header survey-take-header">
-        <button className="back-catalog-btn" onClick={() => navigate('/')}>
-          <ArrowLeft size={16} />
+        <button className="btn-secondary" onClick={() => navigate('/')} style={{ gap: '0.4rem', padding: '0.6rem 1.1rem', fontSize: '0.9rem' }}>
+          <ArrowLeft size={15} />
           <span>Catálogo</span>
         </button>
         <div>
@@ -191,12 +191,12 @@ export const TakeSurvey = () => {
         {survey.questions.map((q, idx) => {
           const currentAnswer = answersMap[q.id];
           const isLikert = q.tipo === 'LIKERT';
-          
+
           return (
             <div key={q.id} className="take-question-card">
               <div className="take-question-header">
-                <span className="question-number">Pregunta {idx + 1}</span>
-                <span className="question-cat">{q.category?.name || 'General'}</span>
+                <span className="question-number-badge">Pregunta {idx + 1}</span>
+                <span className="question-cat-pill">{q.category?.name || 'General'}</span>
               </div>
               <p className="take-question-text">{q.pregunta}</p>
 
@@ -246,8 +246,8 @@ export const TakeSurvey = () => {
 
       {/* Sticky Bottom Actions Bar */}
       <div className="take-actions-bar">
-        <button 
-          className="btn-secondary-custom" 
+        <button
+          className="btn-secondary-custom"
           onClick={handleSaveDraft}
           disabled={saving}
         >
@@ -255,7 +255,7 @@ export const TakeSurvey = () => {
           <span>Guardar Borrador</span>
         </button>
 
-        <button 
+        <button
           className="btn-primary-custom"
           onClick={() => setShowConfirmModal(true)}
           disabled={saving}
@@ -272,15 +272,15 @@ export const TakeSurvey = () => {
             <h3>Finalizar Evaluación</h3>
             <p>¿Estás seguro de que deseas enviar esta evaluación? Una vez finalizada, se calculará el puntaje de madurez y no podrás cambiar las respuestas.</p>
             <div className="modal-actions">
-              <button 
-                className="modal-cancel-btn" 
+              <button
+                className="btn-secondary"
                 onClick={() => setShowConfirmModal(false)}
                 disabled={saving}
               >
                 Cancelar
               </button>
-              <button 
-                className="modal-submit-btn" 
+              <button
+                className="btn-primary"
                 onClick={handleSubmit}
                 disabled={saving}
               >

@@ -453,9 +453,9 @@ export const Surveys = () => {
       <div className="surveys-grid">
         {surveys.map((survey) => {
           const questionsCount =
-            survey._count?.questions ||
-            survey.questions?.length ||
-            survey.questions_count ||
+            survey.questions_count ??
+            survey.questions?.length ??
+            survey._count?.questions ??
             0;
 
           const isArchived = survey.status === 'ARCHIVED' || survey.is_active === false;
@@ -528,7 +528,7 @@ export const Surveys = () => {
               >
                 <div className="survey-stats">
                   <span className="questions-count" style={{ fontSize: '0.85rem' }}>
-                    <strong>{questionsCount || 5}</strong> preguntas
+                    <strong>{questionsCount}</strong> preguntas
                   </span>
                 </div>
 

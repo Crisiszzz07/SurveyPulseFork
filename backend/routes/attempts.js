@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -16,15 +17,24 @@ function getMaturityLevel(percentage) {
 // 1. Obtener todos los intentos de encuesta (con Company y Survey)
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const attemptsRes = await pool.query(
-      `SELECT a.*, 
-              c.nombre_empresa, c.nit, c.sector,
-              s.titulo AS survey_titulo
-       FROM "SurveyAttempt" a
-       LEFT JOIN "Company" c ON a.company_id = c.id
-       LEFT JOIN "Survey" s ON a.survey_id = s.id
-       ORDER BY a.completed_at DESC NULLS LAST, a.started_at DESC`
-    );
+    let query = `
+      SELECT a.*, 
+             c.nombre_empresa, c.nit, c.sector,
+             s.titulo AS survey_titulo
+      FROM "SurveyAttempt" a
+      LEFT JOIN "Company" c ON a.company_id = c.id
+      LEFT JOIN "Survey" s ON a.survey_id = s.id
+    `;
+    const params = [];
+
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+      query += ' WHERE a.company_id = $1';
+      params.push(req.user.empresa_id);
+    }
+
+    query += ' ORDER BY a.completed_at DESC NULLS LAST, a.started_at DESC';
+
+    const attemptsRes = await pool.query(query, params);
 
     const normalizedData = attemptsRes.rows.map(att => ({
       ...att,
@@ -49,12 +59,17 @@ router.post('/', authenticateToken, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Los campos survey_id, company_id y evaluator_id son requeridos.' });
   }
 
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id && company_id !== req.user.empresa_id) {
+    return res.status(403).json({ success: false, error: 'Acceso denegado. No puedes iniciar intentos para otra empresa.' });
+  }
+
   try {
+    const id = crypto.randomUUID();
     const insertRes = await pool.query(
-      `INSERT INTO "SurveyAttempt" (survey_id, company_id, evaluator_id, status, started_at, created_at, updated_at)
-       VALUES ($1, $2, $3, 'IN_PROGRESS', NOW(), NOW(), NOW())
+      `INSERT INTO "SurveyAttempt" (id, survey_id, company_id, evaluator_id, status, started_at, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, 'IN_PROGRESS', NOW(), NOW(), NOW())
        RETURNING *`,
-      [survey_id, company_id, evaluator_id]
+      [id, survey_id, company_id, evaluator_id]
     );
 
     res.status(201).json({
@@ -89,6 +104,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 
     const attempt = attemptRes.rows[0];
+
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id && attempt.company_id !== req.user.empresa_id) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
 
     // 2. Obtener respuestas guardadas para este intento
     const answersRes = await pool.query(
@@ -145,6 +164,19 @@ router.post('/:id/answers', authenticateToken, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Las respuestas son requeridas y deben ser un array.' });
   }
 
+  try {
+    const attemptRes = await pool.query('SELECT company_id FROM "SurveyAttempt" WHERE id = $1', [attemptId]);
+    if (attemptRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Intento no encontrado.' });
+    }
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id && attemptRes.rows[0].company_id !== req.user.empresa_id) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
+  } catch (error) {
+    console.error('Error al verificar propiedad del intento:', error);
+    return res.status(500).json({ success: false, error: 'Error interno del servidor.' });
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -159,10 +191,12 @@ router.post('/:id/answers', authenticateToken, async (req, res) => {
                            : ans.score != null ? Number(ans.score)
                            : null;
 
+        const answerId = crypto.randomUUID();
         await client.query(
-          `INSERT INTO "SurveyAnswer" (attempt_id, question_id, selected_option_id, answer_text, numeric_value, created_at)
-           VALUES ($1, $2, $3, $4, $5, NOW())`,
+          `INSERT INTO "SurveyAnswer" (id, attempt_id, question_id, selected_option_id, answer_text, numeric_value, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
           [
+            answerId,
             attemptId,
             ans.question_id,
             ans.selected_option_id || null,
@@ -189,6 +223,14 @@ router.post('/:id/submit', authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
+    const checkAttempt = await pool.query('SELECT company_id FROM "SurveyAttempt" WHERE id = $1', [id]);
+    if (checkAttempt.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Intento no encontrado.' });
+    }
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id && checkAttempt.rows[0].company_id !== req.user.empresa_id) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
+
     // 1. Obtener todas las respuestas guardadas del intento
     const answersRes = await pool.query(
       'SELECT numeric_value FROM "SurveyAnswer" WHERE attempt_id = $1',
@@ -239,6 +281,10 @@ router.post('/:id/submit', authenticateToken, async (req, res) => {
 router.get('/history/company/:companyId', authenticateToken, async (req, res) => {
   const { companyId } = req.params;
 
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id && companyId !== req.user.empresa_id) {
+    return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+  }
+
   try {
     const historyRes = await pool.query(
       `SELECT a.*,
@@ -267,6 +313,14 @@ router.get('/:id/answers', authenticateToken, async (req, res) => {
   const { id: attemptId } = req.params;
 
   try {
+    const checkAttempt = await pool.query('SELECT company_id FROM "SurveyAttempt" WHERE id = $1', [attemptId]);
+    if (checkAttempt.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Intento no encontrado.' });
+    }
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id && checkAttempt.rows[0].company_id !== req.user.empresa_id) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
+
     const answersRes = await pool.query(
       `SELECT sa.*, 
               qo.texto AS option_texto, qo.valor AS option_valor

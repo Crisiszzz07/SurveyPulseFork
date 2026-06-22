@@ -2,26 +2,38 @@
 
 :root {
   /* Color Palette - Premium Warm Glassmorphism */
-  --bg-primary: #fdfbf7; /* Lighter, warmer beige for better contrast */
-  --bg-secondary: rgba(255, 255, 255, 0.75); /* More opaque glass for readability */
-  --bg-card: rgba(255, 255, 255, 0.85); /* Solid inner card */
-  --border-color: rgba(140, 98, 57, 0.15); /* Stronger warm border */
-  
-  --primary-color: #8c5b30; /* Deep terracotta/brown - high contrast */
+  --bg-primary: #fdfbf7;
+  /* Lighter, warmer beige for better contrast */
+  --bg-secondary: rgba(255, 255, 255, 0.75);
+  /* More opaque glass for readability */
+  --bg-card: rgba(255, 255, 255, 0.85);
+  /* Solid inner card */
+  --border-color: rgba(140, 98, 57, 0.15);
+  /* Stronger warm border */
+
+  --primary-color: #8c5b30;
+  /* Deep terracotta/brown - high contrast */
   --primary-hover: #6e4624;
   --primary-light: rgba(140, 98, 57, 0.1);
-  
-  --secondary-color: #b58c19; /* Richer gold for better contrast on white */
+
+  --secondary-color: #b58c19;
+  /* Richer gold for better contrast on white */
   --secondary-light: rgba(212, 175, 55, 0.15);
-  
-  --accent-color: #4d661b; /* Deeper olive green */
-  --danger-color: #ba2525; /* Stronger rust red */
-  --warning-color: #b37300; /* Deeper amber */
-  
-  --text-primary: #1a1613; /* Near black brown for max contrast */
-  --text-secondary: #4a413a; /* Dark warm gray */
-  --text-muted: #73675e; /* Accessible muted text */
-  
+
+  --accent-color: #4d661b;
+  /* Deeper olive green */
+  --danger-color: #ba2525;
+  /* Stronger rust red */
+  --warning-color: #b37300;
+  /* Deeper amber */
+
+  --text-primary: #1a1613;
+  /* Near black brown for max contrast */
+  --text-secondary: #4a413a;
+  /* Dark warm gray */
+  --text-muted: #73675e;
+  /* Accessible muted text */
+
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --sidebar-width: 260px;
   --bottom-nav-height: 70px;
@@ -59,7 +71,8 @@ body {
 }
 
 /* Background Blobs - subtle and performant */
-body::before, body::after {
+body::before,
+body::after {
   content: "";
   position: fixed;
   width: 50vw;
@@ -282,10 +295,12 @@ p {
   background-color: rgba(77, 102, 27, 0.15);
   color: var(--accent-color);
 }
+
 .user-role-badge.company_admin {
   background-color: var(--secondary-light);
   color: var(--secondary-color);
 }
+
 .user-role-badge.evaluator {
   background-color: rgba(140, 98, 57, 0.1);
   color: var(--primary-color);
@@ -330,11 +345,12 @@ p {
     justify-content: center;
     box-shadow: 0 -4px 20px rgba(140, 98, 57, 0.08);
   }
-  
-  .sidebar-header, .sidebar-footer {
+
+  .sidebar-header,
+  .sidebar-footer {
     display: none;
   }
-  
+
   .sidebar-nav {
     flex-direction: row;
     justify-content: space-around;
@@ -343,7 +359,7 @@ p {
     width: 100%;
     max-width: 500px;
   }
-  
+
   .sidebar-link {
     flex-direction: column;
     padding: 0.4rem;
@@ -351,23 +367,23 @@ p {
     border-radius: 8px;
     font-size: 0.65rem;
   }
-  
+
   .sidebar-link span {
     font-weight: 700;
   }
-  
+
   .sidebar-link:hover {
     transform: none;
     background-color: transparent;
     color: var(--primary-color);
   }
-  
+
   .sidebar-link.active {
     background: transparent;
     color: var(--primary-color);
     box-shadow: none;
   }
-  
+
   .sidebar-link.active svg {
     color: var(--primary-color);
     filter: drop-shadow(0 2px 4px rgba(140, 98, 57, 0.3));
@@ -377,7 +393,9 @@ p {
 /* ==========================================================================
    Buttons
    ========================================================================== */
-.btn-primary, .login-submit-btn, .btn-primary-custom {
+.btn-primary,
+.login-submit-btn,
+.btn-primary-custom {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
   color: #fff;
   border: none;
@@ -394,16 +412,21 @@ p {
   gap: 0.5rem;
 }
 
-.btn-primary:hover, .login-submit-btn:hover, .btn-primary-custom:hover {
+.btn-primary:hover,
+.login-submit-btn:hover,
+.btn-primary-custom:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(140, 98, 57, 0.4);
 }
 
-.btn-primary:active, .login-submit-btn:active, .btn-primary-custom:active {
+.btn-primary:active,
+.login-submit-btn:active,
+.btn-primary-custom:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(140, 98, 57, 0.3);
 }
 
+.btn-secondary,
 .btn-secondary-custom {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -416,9 +439,10 @@ p {
   align-items: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
+.btn-secondary:hover,
 .btn-secondary-custom:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
@@ -481,7 +505,10 @@ p {
   color: var(--text-secondary);
 }
 
-.form-group input, .form-input, .form-select, .text-answer-container textarea {
+.form-group input,
+.form-input,
+.form-select,
+.text-answer-container textarea {
   padding: 0.9rem 1.2rem;
   background-color: var(--bg-card);
   border: 1.5px solid var(--border-color);
@@ -491,10 +518,13 @@ p {
   font-size: 1rem;
   outline: none;
   transition: all 0.2s ease;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.form-group input:focus, .form-input:focus, .form-select:focus, .text-answer-container textarea:focus {
+.form-group input:focus,
+.form-input:focus,
+.form-select:focus,
+.text-answer-container textarea:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px var(--primary-light);
   background-color: #fff;
@@ -666,9 +696,20 @@ p {
   justify-content: center;
 }
 
-.kpi-icon-wrapper.blue { background-color: rgba(99, 102, 241, 0.1); color: #4f46e5; }
-.kpi-icon-wrapper.green { background-color: rgba(77, 102, 27, 0.15); color: var(--accent-color); }
-.kpi-icon-wrapper.purple { background-color: rgba(140, 98, 57, 0.15); color: var(--primary-color); }
+.kpi-icon-wrapper.blue {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+}
+
+.kpi-icon-wrapper.green {
+  background-color: rgba(77, 102, 27, 0.15);
+  color: var(--accent-color);
+}
+
+.kpi-icon-wrapper.purple {
+  background-color: rgba(140, 98, 57, 0.15);
+  color: var(--primary-color);
+}
 
 .kpi-title {
   font-size: 0.95rem;
@@ -683,7 +724,8 @@ p {
   margin-bottom: 0.25rem;
 }
 
-.dashboard-charts-section, .company-details-grid {
+.dashboard-charts-section,
+.company-details-grid {
   display: grid;
   grid-template-columns: 2fr 1.5fr;
   gap: 1.5rem;
@@ -691,7 +733,10 @@ p {
 }
 
 @media (max-width: 1024px) {
-  .dashboard-charts-section, .company-details-grid, .survey-detail-grid {
+
+  .dashboard-charts-section,
+  .company-details-grid,
+  .survey-detail-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -722,7 +767,8 @@ p {
   min-width: 600px;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
   padding: 1.25rem;
   border-bottom: 1px solid var(--border-color);
 }
@@ -754,11 +800,35 @@ p {
   align-items: center;
 }
 
-.maturity-tag.critical { background-color: #fdf2f2; color: #a82020; border: 1px solid #f8b4b4; }
-.maturity-tag.low { background-color: #fffaf0; color: #b45309; border: 1px solid #fbd38d; }
-.maturity-tag.medium { background-color: #fefbeb; color: #a16207; border: 1px solid #fef08a; }
-.maturity-tag.high { background-color: #f4f8fa; color: #0369a1; border: 1px solid #bae6fd; }
-.maturity-tag.excellent { background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.maturity-tag.critical {
+  background-color: #fdf2f2;
+  color: #a82020;
+  border: 1px solid #f8b4b4;
+}
+
+.maturity-tag.low {
+  background-color: #fffaf0;
+  color: #b45309;
+  border: 1px solid #fbd38d;
+}
+
+.maturity-tag.medium {
+  background-color: #fefbeb;
+  color: #a16207;
+  border: 1px solid #fef08a;
+}
+
+.maturity-tag.high {
+  background-color: #f4f8fa;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.maturity-tag.excellent {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
 
 .maturity-tag.large {
   padding: 0.5rem 1rem;
@@ -797,12 +867,14 @@ p {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  flex-wrap: wrap; /* Allows wrapping on very small screens */
+  flex-wrap: wrap;
+  /* Allows wrapping on very small screens */
 }
 
 .likert-opt-btn {
   flex: 1;
-  min-width: 60px; /* Ensures buttons don't shrink too much */
+  min-width: 60px;
+  /* Ensures buttons don't shrink too much */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -836,12 +908,15 @@ p {
     flex-direction: column;
     gap: 0.5rem;
   }
+
   .likert-opt-btn {
     width: 100%;
     height: 50px;
   }
+
   .likert-scale-labels {
-    display: none; /* Hide labels if vertical stack */
+    display: none;
+    /* Hide labels if vertical stack */
   }
 }
 
@@ -864,10 +939,12 @@ p {
 
 @media (max-width: 768px) {
   .take-actions-bar {
-    bottom: var(--bottom-nav-height); /* Float above mobile nav */
+    bottom: var(--bottom-nav-height);
+    /* Float above mobile nav */
     padding: 1rem;
     justify-content: center;
   }
+
   .take-actions-bar button {
     flex: 1;
     font-size: 0.9rem;
@@ -945,7 +1022,7 @@ p {
   padding: 2.5rem;
   width: 100%;
   max-width: 500px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -958,32 +1035,58 @@ p {
   font-weight: 700;
   font-size: 0.95rem;
   z-index: 3000;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
   animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.toast-notification.success { background-color: #276749; color: #fff; }
-.toast-notification.error { background-color: #9b2c2c; color: #fff; }
+.toast-notification.success {
+  background-color: #276749;
+  color: #fff;
+}
+
+.toast-notification.error {
+  background-color: #9b2c2c;
+  color: #fff;
+}
 
 /* ==========================================================================
    Animations
    ========================================================================== */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(30px) scale(0.95); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
+  from {
+    transform: translateY(30px) scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Utilities */
@@ -997,7 +1100,9 @@ p {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .page-loading {
@@ -1090,8 +1195,13 @@ p {
   font-size: 0.95rem;
 }
 
-.summary-badge span { color: var(--text-secondary); }
-.summary-badge strong { color: var(--text-primary); }
+.summary-badge span {
+  color: var(--text-secondary);
+}
+
+.summary-badge strong {
+  color: var(--text-primary);
+}
 
 .questions-list {
   display: flex;
@@ -1228,18 +1338,276 @@ p {
 }
 
 /* Dashboard List Card */
-.recent-list { display: flex; flex-direction: column; gap: 1rem; }
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .recent-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 1.25rem; background-color: var(--bg-primary);
-  border: 1px solid var(--border-color); border-radius: 12px; gap: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  gap: 1rem;
   transition: all 0.2s ease;
 }
-.recent-item:hover { border-color: var(--primary-color); transform: translateX(4px); }
-.item-meta { display: flex; flex-direction: column; }
-.item-company { font-weight: 700; font-size: 1rem; color: var(--text-primary); }
-.item-survey { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
-.item-results { display: flex; align-items: center; gap: 1.25rem; }
-.item-score { font-weight: 800; font-size: 1.2rem; color: var(--text-primary); }
-.item-link { font-size: 0.9rem; color: var(--primary-color); text-decoration: none; font-weight: 700; }
-.item-link:hover { text-decoration: underline; }
+
+.recent-item:hover {
+  border-color: var(--primary-color);
+  transform: translateX(4px);
+}
+
+.item-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-company {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.item-survey {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.item-results {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.item-score {
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.item-link {
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.item-link:hover {
+  text-decoration: underline;
+}
+
+/* ─── Keyframe animations ───────────────────────────────── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   TakeSurvey — Question Cards
+   ========================================================================== */
+
+/* Card wrapper */
+.take-question-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 12px rgba(140, 98, 57, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+.take-question-card:hover {
+  box-shadow: 0 4px 20px rgba(140, 98, 57, 0.10);
+}
+
+/* Header row: badge + category pill side by side */
+.take-question-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+/* "Pregunta N" — gradient numbered badge */
+.question-number-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 3px 10px rgba(140, 98, 57, 0.28);
+}
+
+/* Category pill — subtle warm tone */
+.question-cat-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.85rem;
+  border-radius: 999px;
+  background: var(--secondary-light);
+  border: 1px solid rgba(181, 140, 25, 0.25);
+  color: var(--secondary-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* Question text */
+.take-question-text {
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.55;
+  margin: 0 0 1.1rem;
+}
+
+/* ==========================================================================
+   TakeSurvey — Likert Scale
+   ========================================================================== */
+.likert-scale-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.likert-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  padding: 0 0.25rem;
+}
+
+.likert-options {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.likert-opt-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-primary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 140ms ease;
+}
+
+.likert-opt-btn:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.likert-opt-btn:active {
+  transform: scale(0.96);
+}
+
+.likert-opt-btn.active {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  box-shadow: 0 4px 14px rgba(140, 98, 57, 0.30);
+}
+
+.likert-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.likert-opt-btn.active .likert-value {
+  color: #fff;
+}
+
+.likert-selected-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0.35rem 0 0;
+}
+
+/* ==========================================================================
+   TakeSurvey — Actions bar
+   ========================================================================== */
+.take-actions-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  padding: 1rem 1.5rem;
+  background: rgba(253, 251, 247, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-color);
+  margin-top: 1.5rem;
+  z-index: 10;
+}
+
+/* ==========================================================================
+   TakeSurvey — Text answer
+   ========================================================================== */
+.text-answer-container textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.93rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.text-answer-container textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}

@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -47,11 +48,12 @@ router.post('/get-or-create', authenticateToken, async (req, res) => {
     for (const name of uniqueNames) {
       const normalizedName = name.toLowerCase().trim();
       if (!existingMap[normalizedName]) {
+        const id = crypto.randomUUID();
         const insertRes = await client.query(
-          `INSERT INTO "Category" (name, description) 
-           VALUES ($1, $2) 
+          `INSERT INTO "Category" (id, name, description, updated_at) 
+           VALUES ($1, $2, $3, NOW()) 
            RETURNING id, name`,
-          [name, 'Categoría importada automáticamente']
+          [id, name, 'Categoría importada automáticamente']
         );
         const newCat = insertRes.rows[0];
         existingMap[normalizedName] = newCat.id;

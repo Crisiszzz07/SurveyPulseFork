@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -18,7 +19,12 @@ router.get('/', authenticateToken, async (req, res) => {
     const params = [];
     const countParams = [];
 
-    if (search) {
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+      countQuery += ' WHERE id = $1';
+      dataQuery += ' WHERE id = $1';
+      params.push(req.user.empresa_id);
+      countParams.push(req.user.empresa_id);
+    } else if (search) {
       const searchPattern = `%${search}%`;
       countQuery += ' WHERE nombre_empresa ILIKE $1 OR nit ILIKE $1 OR sector ILIKE $1';
       dataQuery += ' WHERE nombre_empresa ILIKE $1 OR nit ILIKE $1 OR sector ILIKE $1';
@@ -50,6 +56,10 @@ router.get('/', authenticateToken, async (req, res) => {
 // 2. Obtener detalles y usuarios vinculados de una empresa
 router.get('/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
+
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id && req.user.empresa_id !== id) {
+    return res.status(403).json({ success: false, error: 'Acceso denegado a otra empresa.' });
+  }
 
   try {
     // 1. Obtener datos de la empresa
@@ -88,11 +98,12 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 
   try {
+    const id = crypto.randomUUID();
     const insertRes = await pool.query(
-      `INSERT INTO "Company" (nombre_empresa, nit, sector, direccion, telefono, correo, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      `INSERT INTO "Company" (id, nombre_empresa, nit, sector, direccion, telefono, correo, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
        RETURNING *`,
-      [nombre_empresa, nit, sector, direccion || null, telefono || null, correo]
+      [id, nombre_empresa, nit, sector, direccion || null, telefono || null, correo]
     );
 
     res.status(201).json({

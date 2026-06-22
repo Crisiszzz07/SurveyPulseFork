@@ -1,6 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -34,11 +35,12 @@ router.post('/register', async (req, res) => {
     let empresaId = null;
     // Si el rol es COMPANY_ADMIN y se pasaron los datos de la empresa, la creamos
     if (rol === 'COMPANY_ADMIN' && nombreEmpresa) {
+      const companyId = crypto.randomUUID();
       const companyRes = await client.query(
-        `INSERT INTO "Company" (nombre_empresa, nit, sector, correo)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO "Company" (id, nombre_empresa, nit, sector, correo, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())
          RETURNING id`,
-        [nombreEmpresa, nitEmpresa || `NIT-${Date.now()}`, sectorEmpresa || 'General', email]
+        [companyId, nombreEmpresa, nitEmpresa || `NIT-${Date.now()}`, sectorEmpresa || 'General', email]
       );
       empresaId = companyRes.rows[0].id;
     }
@@ -48,11 +50,12 @@ router.post('/register', async (req, res) => {
     const userEmail = email.trim().toLowerCase();
 
     // Insertar usuario
+    const userId = crypto.randomUUID();
     const userRes = await client.query(
-      `INSERT INTO "User" (nombre, apellido, email, password, rol, empresa_id, estado)
-       VALUES ($1, $2, $3, $4, $5, $6, 'ACTIVO')
+      `INSERT INTO "User" (id, nombre, apellido, email, password, rol, empresa_id, estado, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVO', NOW())
        RETURNING id, nombre, apellido, email, rol, empresa_id, estado`,
-      [nombre.trim(), apellido.trim(), userEmail, hashedPassword, rol, empresaId]
+      [userId, nombre.trim(), apellido.trim(), userEmail, hashedPassword, rol, empresaId]
     );
 
     await client.query('COMMIT');

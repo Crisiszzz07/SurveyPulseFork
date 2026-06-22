@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -8,7 +9,15 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const surveysRes = await pool.query(
-      'SELECT * FROM "Survey" WHERE is_active = true ORDER BY created_at DESC'
+      `SELECT s.*, COALESCE(q.q_count, 0)::integer AS questions_count
+       FROM "Survey" s
+       LEFT JOIN (
+         SELECT survey_id, COUNT(*) AS q_count
+         FROM "Question"
+         GROUP BY survey_id
+       ) q ON s.id = q.survey_id
+       WHERE s.is_active = true
+       ORDER BY s.created_at DESC`
     );
     res.json(surveysRes.rows);
   } catch (error) {
@@ -103,11 +112,12 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 
   try {
+    const id = crypto.randomUUID();
     const insertRes = await pool.query(
-      `INSERT INTO "Survey" (titulo, descripcion, version, is_active, status, created_by, updated_at)
-       VALUES ($1, $2, $3, true, $4, $5, NOW())
+      `INSERT INTO "Survey" (id, titulo, descripcion, version, is_active, status, created_by, updated_at)
+       VALUES ($1, $2, $3, $4, true, $5, $6, NOW())
        RETURNING *`,
-      [titulo, descripcion || null, version, status, created_by]
+      [id, titulo, descripcion || null, version, status, created_by]
     );
 
     res.status(201).json({
@@ -144,11 +154,13 @@ router.post('/:id/questions', authenticateToken, async (req, res) => {
       }
 
       // Insertar pregunta
+      const questionId = crypto.randomUUID();
       const qRes = await client.query(
-        `INSERT INTO "Question" (survey_id, category_id, pregunta, tipo, orden, obligatorio, categoria_indicador)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO "Question" (id, survey_id, category_id, pregunta, tipo, orden, obligatorio, categoria_indicador)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING *`,
         [
+          questionId,
           surveyId,
           categoryId,
           q.pregunta.trim(),
@@ -165,10 +177,11 @@ router.post('/:id/questions', authenticateToken, async (req, res) => {
       // Insertar opciones de la pregunta si las hay
       if (q.opciones && Array.isArray(q.opciones)) {
         for (const opt of q.opciones) {
+          const optionId = crypto.randomUUID();
           await client.query(
-            `INSERT INTO "QuestionOption" (question_id, texto, valor)
-             VALUES ($1, $2, $3)`,
-            [dbQ.id, opt.texto, Number(opt.valor)]
+            `INSERT INTO "QuestionOption" (id, question_id, texto, valor)
+             VALUES ($1, $2, $3, $4)`,
+            [optionId, dbQ.id, opt.texto, Number(opt.valor)]
           );
         }
       }

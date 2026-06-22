@@ -1,5 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -27,10 +28,15 @@ router.get('/', authenticateToken, async (req, res) => {
     const dataParams = [];
     const conditions = [];
 
-    if (empresaId) {
+    let targetEmpresaId = empresaId;
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+      targetEmpresaId = req.user.empresa_id;
+    }
+
+    if (targetEmpresaId) {
       conditions.push(`u.empresa_id = $${conditions.length + 1}`);
-      countParams.push(empresaId);
-      dataParams.push(empresaId);
+      countParams.push(targetEmpresaId);
+      dataParams.push(targetEmpresaId);
     }
 
     if (search) {
@@ -102,6 +108,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 
     const u = userRes.rows[0];
+
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id && u.empresa_id !== req.user.empresa_id) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+    }
     const normalizedUser = {
       id: u.id,
       nombre: u.nombre,
@@ -150,6 +160,12 @@ router.post('/', authenticateToken, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Todos los campos requeridos (nombre, apellido, email, password, rol) deben ser provistos.' });
   }
 
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+    if (rol === 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'No tienes permisos para crear administradores globales.' });
+    }
+  }
+
   try {
     // Verificar si el email ya existe
     const existsRes = await pool.query('SELECT id FROM "User" WHERE email = $1', [email.trim().toLowerCase()]);
@@ -159,11 +175,18 @@ router.post('/', authenticateToken, async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const id = crypto.randomUUID();
+
+    let targetEmpresaId = empresa_id;
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+      targetEmpresaId = req.user.empresa_id;
+    }
+
     const insertRes = await pool.query(
-      `INSERT INTO "User" (nombre, apellido, email, password, rol, empresa_id, estado, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      `INSERT INTO "User" (id, nombre, apellido, email, password, rol, empresa_id, estado, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
        RETURNING id, nombre, apellido, email, rol, empresa_id, estado, created_at, updated_at`,
-      [nombre.trim(), apellido.trim(), email.trim().toLowerCase(), hashedPassword, rol, empresa_id || null, estado]
+      [id, nombre.trim(), apellido.trim(), email.trim().toLowerCase(), hashedPassword, rol, targetEmpresaId || null, estado]
     );
 
     res.status(201).json({
@@ -185,13 +208,33 @@ router.put('/:id', authenticateToken, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Los campos nombre, apellido y rol son requeridos.' });
   }
 
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+    try {
+      const checkUser = await pool.query('SELECT empresa_id, rol FROM "User" WHERE id = $1', [id]);
+      if (checkUser.rows.length === 0 || checkUser.rows[0].empresa_id !== req.user.empresa_id) {
+        return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+      }
+      if (rol === 'ADMIN' || checkUser.rows[0].rol === 'ADMIN') {
+        return res.status(403).json({ success: false, error: 'No tienes permisos para modificar administradores globales.' });
+      }
+    } catch (err) {
+      console.error('Error al verificar perfil:', err);
+      return res.status(500).json({ success: false, error: 'Error interno del servidor.' });
+    }
+  }
+
   try {
+    let targetEmpresaId = empresa_id;
+    if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+      targetEmpresaId = req.user.empresa_id;
+    }
+
     const updateRes = await pool.query(
       `UPDATE "User"
        SET nombre = $1, apellido = $2, estado = $3, rol = $4, empresa_id = $5, updated_at = NOW()
        WHERE id = $6
        RETURNING id, nombre, apellido, email, rol, empresa_id, estado, created_at, updated_at`,
-      [nombre, apellido, estado || 'ACTIVO', rol, empresa_id || null, id]
+      [nombre, apellido, estado || 'ACTIVO', rol, targetEmpresaId || null, id]
     );
 
     if (updateRes.rows.length === 0) {
@@ -211,6 +254,21 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // 5. Desactivación lógica de un usuario (Soft Delete)
 router.delete('/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
+
+  if (req.user.rol !== 'ADMIN' && req.user.empresa_id) {
+    try {
+      const checkUser = await pool.query('SELECT empresa_id, rol FROM "User" WHERE id = $1', [id]);
+      if (checkUser.rows.length === 0 || checkUser.rows[0].empresa_id !== req.user.empresa_id) {
+        return res.status(403).json({ success: false, error: 'Acceso denegado.' });
+      }
+      if (checkUser.rows[0].rol === 'ADMIN') {
+        return res.status(403).json({ success: false, error: 'No tienes permisos para desactivar administradores globales.' });
+      }
+    } catch (err) {
+      console.error('Error al verificar perfil para desactivar:', err);
+      return res.status(500).json({ success: false, error: 'Error interno del servidor.' });
+    }
+  }
 
   try {
     const deleteRes = await pool.query(

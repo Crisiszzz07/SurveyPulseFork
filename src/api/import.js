@@ -31,11 +31,7 @@ export async function getOrCreateCategories(categoryNames) {
     return data.categoryMap || {};
   } catch (err) {
     console.error('Error en getOrCreateCategories:', err.message);
-    const nameToId = {};
-    categoryNames.forEach((name, i) => {
-      nameToId[name] = `mock-cat-${i + 1}`;
-    });
-    return nameToId;
+    throw err;
   }
 }
 
