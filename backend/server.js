@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
+import path from 'path';
+import { fileURLToPath } from 'url';
 // Importar rutas
 import authRoutes from './routes/auth.js';
 import companyRoutes from './routes/companies.js';
@@ -33,7 +34,16 @@ app.use('/api/categories', categoryRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'UP', timestamp: new Date() });
 });
+//conexión con el frontend porque antes no había
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Servir los archivos estáticos de la carpeta dist (subiendo un nivel a la raíz)
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Cualquier ruta que no sea de la API, devuelve el index.html para React Router
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 // Manejo de errores global
 app.use((err, req, res, next) => {
   console.error('Error no controlado en el servidor:', err);
