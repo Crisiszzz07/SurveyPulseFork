@@ -35,8 +35,9 @@ export const Sidebar = () => {
           <span>Encuestas</span>
         </NavLink>
 
+        {/*  Ahora apunta a /metrics, que bajo el basename se vuelve /dashboard/metrics */}
         <NavLink 
-          to="/dashboard" 
+          to="/metrics" 
           className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
         >
           <BarChart3 size={20} />
