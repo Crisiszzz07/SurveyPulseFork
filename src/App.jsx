@@ -27,8 +27,10 @@ const DashboardLayout = () => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      {/* Se añade el basename para encapsular toda la app bajo /dashboard */}
+      <BrowserRouter basename="/dashboard">
         <Routes>
+          {/* Esto ahora se renderizará en la URL: /dashboard/login */}
           <Route path="/login" element={<Login />} />
 
           <Route element={
@@ -36,8 +38,12 @@ function App() {
               <DashboardLayout />
             </ProtectedRoute>
           }>
+            {/* Esto ahora será la raíz de la app: /dashboard/ */}
             <Route path="/" element={<Surveys />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            
+            {/* AQUÍ: Esto se convertirá en /dashboard/dashboard */}
+            <Route path="/metrics" element={<Dashboard />} />
+            
             <Route path="/companies" element={<CompanyView />} />
             <Route path="/surveys/:id" element={<SurveyDetail />} />
             <Route path="/surveys/new" element={<CreateSurvey />} />
